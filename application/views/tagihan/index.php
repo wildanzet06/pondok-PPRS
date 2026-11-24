@@ -74,6 +74,19 @@ $qs_filter = http_build_query(array_filter($filter));
 
                             <div class="col-6 col-md-3">
                                 <div class="form-group mb-2">
+                                    <label>Unit</label>
+                                    <select name="unit_id" class="form-control form-control-sm">
+                                        <?php foreach ($unit as $id_unit => $nama_unit): ?>
+                                            <option value="<?= (int) $id_unit; ?>" <?= ((int) $filter['unit_id'] === (int) $id_unit) ? 'selected' : ''; ?>>
+                                                <?= html_escape($nama_unit); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="col-6 col-md-3">
+                                <div class="form-group mb-2">
                                     <label>Bulan</label>
                                     <select name="bulan" class="form-control form-control-sm">
                                         <option value="">Semua bulan</option>
@@ -156,6 +169,7 @@ $qs_filter = http_build_query(array_filter($filter));
                                 <th>NIS</th>
                                 <th>Nama Siswa</th>
                                 <th>Jenis</th>
+                                <th>Unit</th>
                                 <th>Periode</th>
                                 <th>Tagihan</th>
                                 <th>Terbayar</th>
@@ -175,6 +189,7 @@ $qs_filter = http_build_query(array_filter($filter));
                                         <?= html_escape($t->jenis_nama); ?>
                                         <?php if ($t->boleh_cicil): ?><span class="badge badge-light">cicilan</span><?php endif; ?>
                                     </td>
+                                    <td><?= html_escape($t->unit_nama); ?></td>
                                     <td>
                                         <?php
                                         if ($t->periode_bulan) {

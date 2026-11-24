@@ -53,11 +53,15 @@ class Pembayaran_model extends CI_Model {
         return $this->db->get()->row();
     }
     
-    public function get_laporan($bulan = null, $tahun = null, $status = null) {
-        $this->db->select('cbt_pembayaran_spp.*, master_siswa.nis, master_siswa.nama');
+    public function get_laporan($bulan = null, $tahun = null, $status = null, $unit_id = 0) {
+        $this->db->select('cbt_pembayaran_spp.*, master_siswa.nis, master_siswa.nama, t.unit_id');
         $this->db->select($this->sql_untuk, FALSE);
         $this->db->from('cbt_pembayaran_spp');
         $this->db->join('master_siswa', 'master_siswa.id_siswa = cbt_pembayaran_spp.siswa_id', 'left');
+        $this->db->join('cbt_tagihan t', 't.id = cbt_pembayaran_spp.tagihan_id', 'left');
+        if ((int) $unit_id > 0) {
+            $this->db->where('t.unit_id', (int) $unit_id);
+        }
         
         if ($bulan) {
             $this->db->where('cbt_pembayaran_spp.bulan', $bulan);
@@ -244,7 +248,7 @@ class Pembayaran_model extends CI_Model {
 
     // Teks keterangan pembayaran. Pembayaran yang terhubung ke tagihan memakai nama
     // jenis + periode; pembayaran lama (tanpa tagihan) tetap tampil "SPP Bulan Tahun".
-    public $sql_untuk = "COALESCE((SELECT CONCAT(j.nama, CASE WHEN t.periode_bulan IS NOT NULL THEN CONCAT(' ', t.periode_bulan, ' ', t.periode_tahun) WHEN t.keterangan IS NOT NULL THEN CONCAT(' - ', t.keterangan) ELSE '' END) FROM cbt_tagihan t JOIN cbt_jenis_tagihan j ON j.id = t.jenis_id WHERE t.id = cbt_pembayaran_spp.tagihan_id), CONCAT('SPP ', cbt_pembayaran_spp.bulan, ' ', cbt_pembayaran_spp.tahun)) AS untuk";
+    public $sql_untuk = "COALESCE((SELECT CONCAT(j.nama, CASE WHEN t.unit_id > 0 THEN CONCAT(' [', COALESCE((SELECT u.nama FROM master_unit u WHERE u.id_unit = t.unit_id), 'Unit'), ']') ELSE '' END, CASE WHEN t.periode_bulan IS NOT NULL THEN CONCAT(' ', t.periode_bulan, ' ', t.periode_tahun) WHEN t.keterangan IS NOT NULL THEN CONCAT(' - ', t.keterangan) ELSE '' END) FROM cbt_tagihan t JOIN cbt_jenis_tagihan j ON j.id = t.jenis_id WHERE t.id = cbt_pembayaran_spp.tagihan_id), CONCAT('SPP ', cbt_pembayaran_spp.bulan, ' ', cbt_pembayaran_spp.tahun)) AS untuk";
 
     // Saat siswa memulai percobaan Midtrans baru untuk tagihan yang sama,
     // percobaan lama yang masih pending dianggap gagal

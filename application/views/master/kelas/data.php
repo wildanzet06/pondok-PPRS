@@ -73,6 +73,7 @@
                                 <th height="40" class="text-center align-middle p-0">No.</th>
                                 <th class="align-middle">Nama Kelas</th>
                                 <th class="align-middle">Kode Kelas</th>
+                                <th class="align-middle">Unit</th>
                                 <th class="align-middle">Wali Kelas</th>
                                 <th class="align-middle text-center">Jumlah Siswa</th>
                                 <th class="text-center align-middle p-0" style="width: 180px"><span>Aksi</span></th>
@@ -86,6 +87,11 @@
                                     <td class="align-middle text-center"><?= $no ?></td>
                                     <td class="align-middle"><?= $kls->nama_kelas ?></td>
                                     <td class="align-middle"><?= $kls->kode_kelas ?></td>
+                                    <td class="align-middle">
+                                        <span class="badge badge-secondary"><?=
+                                            html_escape(unit_nama(isset($kls->unit_id) ? $kls->unit_id : 0))
+                                        ?></span>
+                                    </td>
                                     <td class="align-middle"><?= $kls->nama_guru ?></td>
                                     <td class="align-middle text-center"><?= $kls->jml_siswa ?></td>
                                     <td class="align-middle text-center">

@@ -56,9 +56,20 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                             </tr>
                                         </thead>
                                         <tbody>
-                                        <?php foreach ($tagihan as $t): ?>
+                                        <?php foreach ($tagihan_grup as $grup): ?>
+                                            <tr class="table-secondary">
+                                                <td colspan="5">
+                                                    <i class="fas fa-layer-group mr-1"></i>
+                                                    <b><?= html_escape($grup['nama']); ?></b>
+                                                    <span class="text-muted small">(<?= count($grup['items']); ?> tagihan)</span>
+                                                </td>
+                                            </tr>
+                                            <?php foreach ($grup['items'] as $t): ?>
                                             <?php
                                             $label = $t->jenis_nama;
+                                            if (!empty($t->unit_id)) {
+                                                $label .= ' · ' . $t->unit_nama;
+                                            }
                                             if (!empty($t->periode_bulan)) {
                                                 $label .= ' ' . $t->periode_bulan . ' ' . $t->periode_tahun;
                                             } elseif (!empty($t->keterangan)) {
@@ -114,6 +125,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                     <?php endif; ?>
                                                 </td>
                                             </tr>
+                                            <?php endforeach; ?>
                                         <?php endforeach; ?>
                                         </tbody>
                                     </table>

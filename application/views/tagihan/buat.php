@@ -48,12 +48,23 @@
                                     <?php foreach ($jenis as $j): ?>
                                         <option value="<?= (int) $j->id; ?>"
                                                 data-tipe="<?= $j->tipe; ?>"
+                                                data-unit="<?= (int) $j->unit_id; ?>"
                                                 data-nominal="<?= (int) $j->nominal_default; ?>">
                                             <?= html_escape($j->nama); ?>
                                             (<?= $j->tipe == 'bulanan' ? 'bulanan' : 'sekali bayar'; ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Unit sasaran</label>
+                                <select name="unit_id" id="unit_id" class="form-control">
+                                    <?php foreach ($unit as $id_unit => $nama_unit): ?>
+                                        <option value="<?= (int) $id_unit; ?>"><?= html_escape($nama_unit); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">Murid yang terdaftar di unit inilah yang akan mendapat tagihan. "Semua unit" mengabaikan filter unit.</small>
                             </div>
 
                             <div id="grup_periode" class="form-row">
@@ -103,10 +114,12 @@
                             <?php if ($aktif_tersedia && !empty($daftar_kelas)): ?>
                             <div class="form-group" id="grup_kelas">
                                 <label>Kelas <small class="text-muted">(hanya berlaku untuk "siswa aktif")</small></label>
-                                <select name="id_kelas" class="form-control">
+                                <select name="id_kelas" id="id_kelas" class="form-control">
                                     <option value="0">Semua kelas</option>
                                     <?php foreach ($daftar_kelas as $k): ?>
-                                        <option value="<?= (int) $k->id_kelas; ?>"><?= html_escape($k->nama_kelas); ?></option>
+                                        <option value="<?= (int) $k->id_kelas; ?>" data-unit="<?= (int) $k->unit_id; ?>">
+                                            <?= html_escape($k->nama_kelas); ?> · <?= html_escape(unit_nama($k->unit_id)); ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -150,14 +163,35 @@
         var grup  = document.getElementById('grup_periode');
         var nom   = document.getElementById('nominal');
         var form  = document.getElementById('formBuat');
+        var unit  = document.getElementById('unit_id');
+        var kelas = document.getElementById('id_kelas');
         if (!jenis) return;
+
+        function sesuaikanKelas() {
+            if (!kelas || !unit) return;
+            var dipilih = unit.value;
+            var adaTerpilih = false;
+            for (var i = 0; i < kelas.options.length; i++) {
+                var o = kelas.options[i];
+                if (o.value === '0') { o.hidden = false; continue; }
+                var unitKelas = o.getAttribute('data-unit') || '0';
+                o.hidden = dipilih !== '0' && unitKelas !== dipilih;
+                if (o.selected && !o.hidden) adaTerpilih = true;
+            }
+            if (!adaTerpilih && kelas.value !== '0') kelas.value = '0';
+        }
 
         function sesuaikan() {
             var opt = jenis.options[jenis.selectedIndex];
             grup.style.display = (opt.getAttribute('data-tipe') === 'bulanan') ? '' : 'none';
             nom.value = opt.getAttribute('data-nominal') || '';
+            if (unit && opt.getAttribute('data-unit') !== null) {
+                unit.value = opt.getAttribute('data-unit');
+            }
+            sesuaikanKelas();
         }
         jenis.addEventListener('change', sesuaikan);
+        if (unit) unit.addEventListener('change', sesuaikanKelas);
         sesuaikan();
 
         form.addEventListener('submit', function (e) {

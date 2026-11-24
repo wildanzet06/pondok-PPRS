@@ -110,7 +110,9 @@
                             {'name':"Tahun Pelajaran", 'link':"datatahun", 'icon': 'far fa-calendar-check'},
                             {'name':"Mata Pelajaran", 'link':"datamapel", 'icon': 'fa fa-book', 'tersembunyi': true},
                             {'name':"Siswa", 'link':"datasiswa", 'icon': 'fa fa-users'},
+                            {'name':"Unit Murid", 'link':"unitsiswa", 'icon': 'fas fa-layer-group'},
                             {'name':"Kelas / Rombel", 'link':"datakelas", 'icon': 'fa fa-school'},
+                            {'name':"Unit Kelas", 'link':"unitkelas", 'icon': 'fas fa-chalkboard-teacher'},
                             {'name':"Ekstrakurikuler", 'link':"dataekstra", 'icon': 'fa fa-chess', 'tersembunyi': true},
                             {'name':"Guru", 'link':"dataguru", 'icon': 'fa fa-chalkboard-teacher'}
                         ]

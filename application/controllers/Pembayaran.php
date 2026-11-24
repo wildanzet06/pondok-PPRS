@@ -76,9 +76,17 @@ class Pembayaran extends CI_Controller {
         $smt = $this->dashboard->getSemesterActive();
 
         $siswa = $this->cbt->getDataSiswa($user->username, $tp->id_tp, $smt->id_smt);
+        $master = $this->db->get_where('master_siswa', array('username' => $user->username))->row();
 
         if (!$siswa) {
-            $siswa = $this->db->get_where('master_siswa', array('username' => $user->username))->row();
+            $siswa = $master;
+        } elseif ($master) {
+            // Model lama meng-select b.id_siswa (kelas_siswa) setelah a.id_siswa,
+            // sehingga id_siswa jadi NULL bila murid belum masuk kelas. Amankan
+            // dari master_siswa agar tagihan tidak jatuh ke semua murid.
+            $siswa->id_siswa = $master->id_siswa;
+            $siswa->nis      = $master->nis;
+            $siswa->nama     = $master->nama;
         }
 
         return $siswa;
@@ -634,14 +642,18 @@ class Pembayaran extends CI_Controller {
     public function laporan() {
         if (!$this->ion_auth->is_admin()) show_error('Akses Ditolak', 403, 'Akses Ditolak');
 
-        $bulan  = $this->input->get('bulan');
-        $tahun  = $this->input->get('tahun');
-        $status = $this->input->get('status');
+        $bulan   = $this->input->get('bulan');
+        $tahun   = $this->input->get('tahun');
+        $status  = $this->input->get('status');
+        $unit_id = (int) $this->input->get('unit_id');
 
         $data = $this->_admin_data('Laporan Pembayaran SPP');
-        $data['laporan']        = $this->Pembayaran_model->get_laporan($bulan, $tahun, $status);
+        $data['laporan']        = $this->Pembayaran_model->get_laporan($bulan, $tahun, $status, $unit_id);
         $data['total_by_bulan'] = $this->Pembayaran_model->get_total_by_bulan($tahun ?: date('Y'));
-        $data['filter']         = array('bulan' => $bulan, 'tahun' => $tahun, 'status' => $status);
+        $data['filter']         = array(
+            'bulan' => $bulan, 'tahun' => $tahun, 'status' => $status, 'unit_id' => $unit_id
+        );
+        $data['unit']           = unit_pilihan(true);
 
         $this->_render_admin('pembayaran/laporan', $data);
     }
@@ -675,6 +687,19 @@ class Pembayaran extends CI_Controller {
         $data['setting_spp'] = $this->Pembayaran_model->setting_spp();
         $data['rekening']    = $this->Pembayaran_model->rekening_all();
         $data['tagihan']     = $this->Tagihan_model->tagihan_siswa($siswa->id_siswa);
+        $tagihan_grup = array();
+        foreach ($data['tagihan'] as $t) {
+            $kunci = (int) $t->unit_id;
+            if (!isset($tagihan_grup[$kunci])) {
+                $tagihan_grup[$kunci] = array(
+                    'unit_id' => $kunci,
+                    'nama'    => $kunci > 0 ? unit_nama($kunci) : 'Tanpa unit',
+                    'items'   => array()
+                );
+            }
+            $tagihan_grup[$kunci]['items'][] = $t;
+        }
+        $data['tagihan_grup'] = $tagihan_grup;
         $data['riwayat']     = $this->Pembayaran_model->get_riwayat_siswa($siswa->id_siswa);
         $data['min_cicilan'] = self::MIN_CICILAN;
         $data['midtrans_aktif'] = $this->_midtrans_siap();
@@ -945,11 +970,12 @@ class Pembayaran extends CI_Controller {
     public function export_laporan() {
         if (!$this->ion_auth->is_admin()) show_error('Akses Ditolak', 403, 'Akses Ditolak');
 
-        $bulan  = $this->input->get('bulan');
-        $tahun  = $this->input->get('tahun');
-        $status = $this->input->get('status');
+        $bulan   = $this->input->get('bulan');
+        $tahun   = $this->input->get('tahun');
+        $status  = $this->input->get('status');
+        $unit_id = (int) $this->input->get('unit_id');
 
-        $rows = $this->Pembayaran_model->get_laporan($bulan, $tahun, $status);
+        $rows = $this->Pembayaran_model->get_laporan($bulan, $tahun, $status, $unit_id);
 
         $label_status = array('success' => 'Lunas', 'pending' => 'Pending');
         $label_metode = array('transfer_manual' => 'Transfer Manual', 'midtrans' => 'Midtrans');
@@ -962,6 +988,7 @@ class Pembayaran extends CI_Controller {
                 $r->nis,
                 $r->nama,
                 $this->Pembayaran_model->get_nama_kelas_siswa($r->siswa_id),
+                unit_nama(isset($r->unit_id) ? $r->unit_id : 0),
                 $r->untuk,
                 (int) $r->jumlah_bayar,
                 isset($label_metode[$r->metode_pembayaran]) ? $label_metode[$r->metode_pembayaran] : $r->metode_pembayaran,
@@ -972,7 +999,7 @@ class Pembayaran extends CI_Controller {
 
         $this->_kirim_csv(
             'laporan_spp_' . date('Ymd_His') . '.csv',
-            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Untuk Pembayaran', 'Jumlah (Rp)', 'Metode', 'Status', 'Tanggal'),
+            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Unit', 'Untuk Pembayaran', 'Jumlah (Rp)', 'Metode', 'Status', 'Tanggal'),
             $baris
         );
     }
@@ -986,7 +1013,8 @@ class Pembayaran extends CI_Controller {
             'jenis_id' => $this->input->get('jenis_id'),
             'bulan'    => $this->input->get('bulan'),
             'tahun'    => $this->input->get('tahun'),
-            'status'   => $this->input->get('status')
+            'status'   => $this->input->get('status'),
+            'unit_id'  => $this->input->get('unit_id')
         );
         $rows = $this->Tagihan_model->list_tagihan($filter);
 
@@ -1005,6 +1033,7 @@ class Pembayaran extends CI_Controller {
                 $t->nis,
                 $t->nama,
                 $this->Pembayaran_model->get_nama_kelas_siswa($t->siswa_id),
+                $t->unit_nama,
                 $t->jenis_nama,
                 $periode,
                 (int) $t->nominal,
@@ -1018,7 +1047,7 @@ class Pembayaran extends CI_Controller {
 
         $this->_kirim_csv(
             'tagihan_' . date('Ymd_His') . '.csv',
-            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Jenis', 'Periode/Keterangan', 'Tagihan (Rp)', 'Diskon (Rp)', 'Terbayar (Rp)', 'Sisa (Rp)', 'Status', 'Jatuh Tempo'),
+            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Unit', 'Jenis', 'Periode/Keterangan', 'Tagihan (Rp)', 'Diskon (Rp)', 'Terbayar (Rp)', 'Sisa (Rp)', 'Status', 'Jatuh Tempo'),
             $baris
         );
     }

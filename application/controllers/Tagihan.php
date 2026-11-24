@@ -61,11 +61,13 @@ class Tagihan extends CI_Controller {
             'jenis_id' => $this->input->get('jenis_id'),
             'bulan'    => $this->input->get('bulan'),
             'tahun'    => $this->input->get('tahun'),
-            'status'   => $this->input->get('status')
+            'status'   => $this->input->get('status'),
+            'unit_id'  => $this->input->get('unit_id')
         );
 
         $data = $this->_admin_data('Daftar Tagihan');
         $data['filter']       = $filter;
+        $data['unit']         = unit_pilihan(true);
         $data['jenis']        = $this->Tagihan_model->jenis_all();
         $this->load->model('Pembayaran_model');
         $setting_spp = $this->Pembayaran_model->setting_spp();
@@ -102,7 +104,7 @@ class Tagihan extends CI_Controller {
         // Kembali ke halaman dengan filter yang sama (hanya kunci yang dikenal)
         parse_str((string) $this->input->post('qs'), $qs);
         $aman = array();
-        foreach (array('jenis_id', 'bulan', 'tahun', 'status') as $k) {
+        foreach (array('jenis_id', 'bulan', 'tahun', 'status', 'unit_id') as $k) {
             if (!empty($qs[$k])) $aman[$k] = $qs[$k];
         }
         redirect('tagihan' . ($aman ? '?' . http_build_query($aman) : ''));
@@ -115,6 +117,7 @@ class Tagihan extends CI_Controller {
         $edit_id = (int) $this->input->get('edit');
 
         $data = $this->_admin_data('Jenis Tagihan');
+        $data['unit']         = unit_pilihan(true);
         $data['daftar_jenis'] = $this->Tagihan_model->jenis_all();
         $data['edit']         = $edit_id ? $this->Tagihan_model->jenis_by_id($edit_id) : null;
 
@@ -135,6 +138,10 @@ class Tagihan extends CI_Controller {
         $maks    = (int) $this->input->post('maks_cicilan');
         if ($maks < 0 || $maks > 36) {
             $maks = 0;
+        }
+        $unit    = (int) $this->input->post('unit_id');
+        if (!array_key_exists($unit, unit_pilihan())) {
+            $unit = 0; // 0 = berlaku untuk semua unit
         }
 
         if (!in_array($tipe, array('bulanan', 'sekali'))) {
@@ -169,6 +176,7 @@ class Tagihan extends CI_Controller {
             'nominal_default' => $nominal,
             'boleh_cicil'     => $cicil,
             'maks_cicilan'    => $maks,
+            'unit_id'         => $unit,
             'keterangan'      => ($ket !== '') ? mb_substr($ket, 0, 255) : null,
             'aktif'           => $aktif
         ), $id);
@@ -266,6 +274,7 @@ class Tagihan extends CI_Controller {
 
         $data = $this->_admin_data('Buat Tagihan');
         $data['jenis']          = $this->Tagihan_model->jenis_all(true);
+        $data['unit']           = unit_pilihan(true);
         $data['daftar_bulan']   = $this->Tagihan_model->daftar_bulan;
         $data['total_siswa']    = $this->Tagihan_model->count_siswa();
         $data['aktif_tersedia'] = $this->Tagihan_model->siswa_aktif_tersedia() && $tp && $smt;
@@ -294,6 +303,10 @@ class Tagihan extends CI_Controller {
         $tempo    = trim((string) $this->input->post('jatuh_tempo'));
         $target   = $this->input->post('target') == 'aktif' ? 'aktif' : 'semua';
         $id_kelas = (int) $this->input->post('id_kelas');
+        $unit_id  = (int) $this->input->post('unit_id');
+        if (!array_key_exists($unit_id, unit_pilihan())) {
+            $unit_id = 0;
+        }
 
         if ($nominal <= 0) {
             $this->session->set_flashdata('error', 'Nominal harus lebih dari 0.');
@@ -320,7 +333,8 @@ class Tagihan extends CI_Controller {
         $smt = $this->dashboard->getSemesterActive();
         $ids = $this->Tagihan_model->id_siswa_target(
             $target, $id_kelas,
-            $tp ? $tp->id_tp : 0, $smt ? $smt->id_smt : 0
+            $tp ? $tp->id_tp : 0, $smt ? $smt->id_smt : 0,
+            $unit_id
         );
         if (empty($ids)) {
             $this->session->set_flashdata('error', 'Tidak ada siswa yang cocok dengan pilihan sasaran.');

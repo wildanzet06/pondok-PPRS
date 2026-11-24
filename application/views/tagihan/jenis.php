@@ -72,6 +72,21 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                             </div>
 
                             <div class="form-group">
+                                <label>Unit</label>
+                                <select name="unit_id" class="form-control">
+                                    <?php
+                                    $unitSimpan = $e ? (int) $e->unit_id : 0;
+                                    foreach ($unit as $id_unit => $nama_unit):
+                                        ?>
+                                        <option value="<?= (int) $id_unit; ?>" <?= $unitSimpan === (int) $id_unit ? 'selected' : ''; ?>>
+                                            <?= html_escape($nama_unit); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <small class="text-muted">Pilih "Semua unit" jika jenis ini berlaku untuk MTs, Madin, dan TPQ.</small>
+                            </div>
+
+                            <div class="form-group">
                                 <label>Nominal bawaan (Rp)</label>
                                 <input type="number" name="nominal_default" min="0" class="form-control"
                                        value="<?= $e ? (int) $e->nominal_default : 0; ?>">
@@ -145,6 +160,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                     <tr>
                                         <th>Kode</th>
                                         <th>Nama</th>
+                                        <th>Unit</th>
                                         <th>Tipe</th>
                                         <th>Nominal Bawaan</th>
                                         <th>Cicilan</th>
@@ -158,6 +174,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                         <tr>
                                             <td><b><?= html_escape($j->kode); ?></b></td>
                                             <td><?= html_escape($j->nama); ?></td>
+                                            <td><?= html_escape(unit_nama($j->unit_id)); ?></td>
                                             <td>
                                                 <?php if ($j->tipe == 'bulanan'): ?>
                                                     <span class="badge badge-primary">Bulanan</span>
@@ -191,7 +208,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($daftar_jenis)): ?>
-                                        <tr><td colspan="8" class="text-center text-muted">Belum ada jenis tagihan.</td></tr>
+                                        <tr><td colspan="9" class="text-center text-muted">Belum ada jenis tagihan.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>

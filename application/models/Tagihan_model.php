@@ -172,7 +172,7 @@ class Tagihan_model extends CI_Model {
 
     public function daftar_kelas_aktif($id_tp, $id_smt) {
         if (!$this->siswa_aktif_tersedia()) return array();
-        $sql = "SELECT DISTINCT mk.id_kelas, mk.nama_kelas
+        $sql = "SELECT DISTINCT mk.id_kelas, mk.nama_kelas, mk.unit_id
                 FROM kelas_siswa ks
                 JOIN master_kelas mk ON mk.id_kelas = ks.id_kelas
                 WHERE ks.id_tp = ? AND ks.id_smt = ?
@@ -181,7 +181,7 @@ class Tagihan_model extends CI_Model {
     }
 
     // Daftar id_siswa sasaran. $mode: 'semua' atau 'aktif'
-    public function id_siswa_target($mode, $id_kelas, $id_tp, $id_smt) {
+    public function id_siswa_target($mode, $id_kelas, $id_tp, $id_smt, $unit_id = 0) {
         if ($mode == 'aktif' && $this->siswa_aktif_tersedia()) {
             $this->db->distinct();
             $this->db->select('id_siswa');
@@ -199,6 +199,31 @@ class Tagihan_model extends CI_Model {
         foreach ($rows as $r) {
             $ids[] = (int) $r->id_siswa;
         }
+
+        // Filter unit: hanya murid yang terdaftar di unit yang dipilih.
+        if ((int) $unit_id > 0 && $this->db->table_exists('master_siswa_unit')) {
+            $anggota = array();
+            $cari = function ($id_tp_filter) use ($unit_id, $id_tp) {
+                $this->db->select('siswa_id')
+                    ->where('unit_id', (int) $unit_id)
+                    ->where('status', 1);
+                if ($id_tp_filter > 0) {
+                    $this->db->where('id_tp', (int) $id_tp_filter);
+                }
+                $keluar = array();
+                foreach ($this->db->get('master_siswa_unit')->result() as $r) {
+                    $keluar[] = (int) $r->siswa_id;
+                }
+                return $keluar;
+            };
+
+            $anggota = $cari((int) $id_tp);
+            if (empty($anggota) && (int) $id_tp > 0) {
+                $anggota = $cari(0); // keanggotaan tanpa tahun tertentu
+            }
+            $ids = array_values(array_intersect($ids, $anggota));
+        }
+
         return $ids;
     }
 
@@ -248,6 +273,7 @@ class Tagihan_model extends CI_Model {
             $baris[] = array(
                 'siswa_id'      => $id_siswa,
                 'jenis_id'      => $jenis->id,
+                'unit_id'       => isset($jenis->unit_id) ? (int) $jenis->unit_id : 0,
                 'periode_bulan' => ($jenis->tipe == 'bulanan') ? $bulan : null,
                 'periode_tahun' => ($jenis->tipe == 'bulanan') ? (int) $tahun : null,
                 'keterangan'    => ($keterangan !== '') ? $keterangan : null,
@@ -312,6 +338,10 @@ class Tagihan_model extends CI_Model {
             $sql .= " AND t.jenis_id = ?";
             $bind[] = (int) $filter['jenis_id'];
         }
+        if (!empty($filter['unit_id'])) {
+            $sql .= " AND t.unit_id = ?";
+            $bind[] = (int) $filter['unit_id'];
+        }
         if (!empty($filter['bulan'])) {
             $sql .= " AND t.periode_bulan = ?";
             $bind[] = $filter['bulan'];
@@ -331,6 +361,8 @@ class Tagihan_model extends CI_Model {
             $r->pending_manual = (int) $r->pending_manual;
             $r->jml_cicilan    = (int) $r->jml_cicilan;
             $r->maks_cicilan   = (int) $r->maks_cicilan;
+            $r->unit_id        = (int) $r->unit_id;
+            $r->unit_nama      = unit_nama($r->unit_id);
             $r->sisa           = max(0, $r->nominal_bersih - $r->terbayar);
             $r->gratis         = ($r->nominal_bersih == 0);
 

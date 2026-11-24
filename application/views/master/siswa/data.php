@@ -45,6 +45,11 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="alert alert-light border small mb-3">
+                        Keanggotaan unit (MTs / Madin / TPQ) diatur terpisah di
+                        <a href="<?= base_url('unitsiswa') ?>"><b>Unit Murid</b></a>.
+                        Satu murid boleh tergabung di beberapa unit dengan satu akun.
+                    </div>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
                             <div class="col-sm-12 col-md-6">

@@ -22,6 +22,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
         $selesai = true;
 
         $tabel = array(
+            'master_unit', 'master_siswa_unit',
             'cbt_pembayaran_spp', 'cbt_setting_spp', 'cbt_jenis_tagihan', 'cbt_tagihan',
             'cbt_keringanan', 'cbt_password_diganti', 'cbt_presensi_sesi', 'cbt_presensi', 'cbt_setting_poin',
             'cbt_rekening', 'cbt_bacaan'
@@ -42,6 +43,27 @@ if (!function_exists('skema_tambahan_pastikan')) {
 
         if (!$lengkap) {
         $ddl = array(
+            "CREATE TABLE IF NOT EXISTS master_unit (
+                id_unit          TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                kode             VARCHAR(20)  NOT NULL,
+                nama             VARCHAR(100) NOT NULL,
+                aktif            TINYINT(1)   NOT NULL DEFAULT 1,
+                PRIMARY KEY (id_unit),
+                UNIQUE KEY uk_unit_kode (kode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS master_siswa_unit (
+                id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                siswa_id         INT          NOT NULL,
+                unit_id          TINYINT UNSIGNED NOT NULL,
+                id_tp            INT          NOT NULL DEFAULT 0,
+                status           TINYINT(1)   NOT NULL DEFAULT 1,
+                created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uk_siswa_unit_tp (siswa_id, unit_id, id_tp),
+                KEY idx_unit (unit_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
             "CREATE TABLE IF NOT EXISTS cbt_pembayaran_spp (
                 id                 INT          NOT NULL AUTO_INCREMENT,
                 siswa_id           INT          NOT NULL,
@@ -81,6 +103,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 nominal_default  INT UNSIGNED NOT NULL DEFAULT 0,
                 boleh_cicil      TINYINT(1)   NOT NULL DEFAULT 0,
                 maks_cicilan     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                unit_id          TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 keterangan       VARCHAR(255) NULL,
                 aktif            TINYINT(1)   NOT NULL DEFAULT 1,
                 created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -97,6 +120,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 keterangan     VARCHAR(255) NULL,
                 nominal        INT UNSIGNED NOT NULL,
                 diskon         INT UNSIGNED NOT NULL DEFAULT 0,
+                unit_id        TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 jatuh_tempo    DATE         NULL,
                 created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
@@ -187,7 +211,11 @@ if (!function_exists('skema_tambahan_pastikan')) {
             array('cbt_setting_spp',    'instruksi_transfer', 'ALTER TABLE cbt_setting_spp ADD COLUMN instruksi_transfer TEXT NULL'),
             array('cbt_setting_spp',    'kunci_kwitansi',    'ALTER TABLE cbt_setting_spp ADD COLUMN kunci_kwitansi VARCHAR(64) NULL'),
             array('cbt_jenis_tagihan',  'boleh_cicil',       'ALTER TABLE cbt_jenis_tagihan ADD COLUMN boleh_cicil TINYINT(1) NOT NULL DEFAULT 0'),
-            array('cbt_jenis_tagihan',  'maks_cicilan',      'ALTER TABLE cbt_jenis_tagihan ADD COLUMN maks_cicilan TINYINT UNSIGNED NOT NULL DEFAULT 0')
+            array('cbt_jenis_tagihan',  'maks_cicilan',      'ALTER TABLE cbt_jenis_tagihan ADD COLUMN maks_cicilan TINYINT UNSIGNED NOT NULL DEFAULT 0'),
+            array('master_kelas',       'unit_id',           'ALTER TABLE master_kelas ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
+            array('kelas_siswa',        'unit_id',           'ALTER TABLE kelas_siswa ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
+            array('cbt_jenis_tagihan',  'unit_id',           'ALTER TABLE cbt_jenis_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0'),
+            array('cbt_tagihan',        'unit_id',           'ALTER TABLE cbt_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0')
         );
 
         foreach ($kolom as $k) {
@@ -202,6 +230,10 @@ if (!function_exists('skema_tambahan_pastikan')) {
             $db->query("ALTER TABLE cbt_pembayaran_spp
                         MODIFY COLUMN metode_pembayaran ENUM('transfer_manual','midtrans','tunai') NOT NULL");
         }
+
+        // Unit yayasan: id 1 dipakai sebagai nilai default (MTs).
+        $db->query("INSERT IGNORE INTO master_unit (id_unit, kode, nama, aktif) VALUES
+                    (1, 'mts', 'MTs', 1), (2, 'madin', 'Madin', 1), (3, 'tpq', 'TPQ', 1)");
 
         // Isi awal (sama seperti docs/database_gabungan.sql), hanya bila kosong.
         $db->query("INSERT INTO cbt_setting_poin (sp1, sp2, sp3)

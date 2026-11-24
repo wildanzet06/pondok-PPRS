@@ -34,19 +34,21 @@
                             </div>
                         </div>
                         <div class="card-body">
-                            <?php
-                            // Menu tambahan: siswa/orang tua dapat memantau poin pelanggaran sendiri
-                            $menu[] = (object) array(
-                                'title' => 'Poin Pelanggaran',
-                                'icon'  => 'ic_document.png',
-                                'link'  => 'akun/pelanggaran',
-                            );
-                            $menu[] = (object) array(
-                                'title' => 'Ekstrakurikuler',
-                                'icon'  => 'ic_document.png',
-                                'link'  => 'siswa/ekstra',
-                            );
-                            ?>
+                            <?php if (unit_siswa_akses_penuh()): ?>
+                                <?php
+                                // Menu tambahan: siswa/orang tua dapat memantau poin pelanggaran sendiri
+                                $menu[] = (object) array(
+                                    'title' => 'Poin Pelanggaran',
+                                    'icon'  => 'ic_document.png',
+                                    'link'  => 'akun/pelanggaran',
+                                );
+                                $menu[] = (object) array(
+                                    'title' => 'Ekstrakurikuler',
+                                    'icon'  => 'ic_document.png',
+                                    'link'  => 'siswa/ekstra',
+                                );
+                                ?>
+                            <?php endif; ?>
                             <div class="row menu-utama">
                                 <?php foreach ($menu as $m): ?>
                                     <div class="col-lg-2 col-sm-3 col-4 mb-3">

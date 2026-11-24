@@ -32,6 +32,18 @@
                         <div class="form-row">
                             <div class="col-12 col-md-4">
                                 <div class="form-group mb-0">
+                                    <label>Unit</label>
+                                    <select name="unit_id" class="form-control">
+                                        <?php foreach ($unit as $id_unit => $nama_unit): ?>
+                                            <option value="<?= (int) $id_unit; ?>" <?= (int) $filter['unit_id'] === (int) $id_unit ? 'selected' : ''; ?>>
+                                                <?= html_escape($nama_unit); ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <div class="form-group mb-0">
                                     <label>Bulan</label>
                                     <select name="bulan" class="form-control">
                                         <option value="">-- Semua Bulan --</option>
@@ -112,6 +124,7 @@
                                 <th>No</th>
                                 <th>NIS</th>
                                 <th>Nama</th>
+                                <th>Unit</th>
                                 <th>Kelas</th>
                                 <th>Untuk</th>
                                 <th>Jumlah</th>
@@ -126,6 +139,7 @@
                                 <td><?= $no++; ?></td>
                                 <td><?= $row->nis; ?></td>
                                 <td><?= $row->nama; ?></td>
+                                <td><?= html_escape(unit_nama(isset($row->unit_id) ? $row->unit_id : 0)); ?></td>
                                 <td><?= $this->Pembayaran_model->get_nama_kelas_siswa($row->siswa_id); ?></td>
                                 <td><?= html_escape($row->untuk); ?></td>
                                 <td class="text-nowrap">Rp <?= number_format($row->jumlah_bayar, 0, ',', '.'); ?></td>

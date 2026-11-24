@@ -17,7 +17,7 @@ class Akses_hook {
     // Controller yang TIDAK boleh dibuka siswa (nama sesuai alamat, huruf kecil)
     private $dilarang_siswa = array(
         // Data umum
-        'datatahun', 'datamapel', 'datasiswa', 'datakelas',
+        'datatahun', 'datamapel', 'datasiswa', 'datakelas', 'unitsiswa', 'unitkelas',
         'dataekstra', 'dataguru', 'dataalumni',
         // E-learning (sisi admin/guru)
         'kelasjadwal', 'kelasmateri', 'kelasmaterijadwal', 'kelasstatus',
@@ -78,7 +78,7 @@ class Akses_hook {
      * Datasiswa: tambah/ubah/hapus siswa + ubah username/password siswa.
      * Bukuinduk: buku induk siswa (halaman admin, tidak ada di menu guru).
      */
-    private $khusus_admin_semua = array('datasiswa', 'bukuinduk', 'usersiswa');
+    private $khusus_admin_semua = array('datasiswa', 'bukuinduk', 'usersiswa', 'unitsiswa', 'unitkelas');
 
     /**
      * Pengecualian dari aturan "controller khusus admin" di atas:
@@ -86,6 +86,20 @@ class Akses_hook {
      * semua pengguna yang login — nilainya diambil dari sesi, bukan dari input.
      */
     private $dikecualikan_admin_semua = array('usersiswa/change_password');
+
+    /**
+     * Siswa Madin/TPQ hanya boleh SPP + absen. Daftar ini dipakai setelah
+     * keanggotaan unit dicek; siswa MTs (atau yang belum punya data unit)
+     * tetap memakai aturan lama.
+     */
+    private $diizinkan_terbatas = array(
+        'dashboard'  => '*',
+        'auth'       => '*',
+        'fitur'      => '*',
+        'pembayaran' => array('bayar_spp', 'submit_pembayaran_manual', 'bayar_midtrans', 'midtrans_notification'),
+        'akun'       => array('kehadiran'),
+        'usersiswa'  => array('change_password')
+    );
 
     /**
      * Controller dengan method tertentu yang hanya untuk admin,
@@ -176,6 +190,9 @@ class Akses_hook {
 
         $admin = $CI->ion_auth->is_admin();
         $siswa = !$admin && $CI->ion_auth->in_group(array(3, 'siswa'));
+
+        // 0a) Madin/TPQ dibatasi hanya SPP + absen (MTs tetap akses penuh).
+        $this->batasi_unit($CI, $siswa, $nama, $metode);
 
         // 10) Guru hanya boleh mengelola bank soalnya sendiri.
         if (!$admin && $CI->ion_auth->in_group(array(2, 'guru'))) {
@@ -387,6 +404,30 @@ class Akses_hook {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    /**
+     * Batasi siswa yang hanya terdaftar di Madin/TPQ.
+     * Satu akun bisa memiliki beberapa unit: selama ada MTs, akses penuh.
+     */
+    private function batasi_unit($CI, $siswa, $nama, $metode)
+    {
+        if (!$siswa || !function_exists('unit_siswa_akses_penuh')) {
+            return;
+        }
+        if (unit_siswa_akses_penuh()) {
+            return;
+        }
+
+        foreach ($nama as $n) {
+            if ($n === '' || !isset($this->diizinkan_terbatas[$n])) {
+                $this->tolak($CI, 'unit madin/tpq membuka ' . $n . '/' . $metode);
+            }
+            $izin = $this->diizinkan_terbatas[$n];
+            if ($izin !== '*' && !in_array($metode, $izin, true)) {
+                $this->tolak($CI, 'unit madin/tpq membuka ' . $n . '/' . $metode);
             }
         }
     }

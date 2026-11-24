@@ -176,6 +176,48 @@ AND COLUMN_NAME = 'kunci_kwitansi');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ---------------------------------------------------------------------
+-- 2b. Unit yayasan (MTs / Madin / TPQ)
+--     Satu murid bisa tergabung di lebih dari satu unit.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS master_unit (
+    id_unit          TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    kode             VARCHAR(20)  NOT NULL,
+    nama             VARCHAR(100) NOT NULL,
+    aktif            TINYINT(1)   NOT NULL DEFAULT 1,
+    PRIMARY KEY (id_unit),
+    UNIQUE KEY uk_unit_kode (kode)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS master_siswa_unit (
+    id               INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    siswa_id         INT          NOT NULL,
+    unit_id          TINYINT UNSIGNED NOT NULL,
+    id_tp            INT          NOT NULL DEFAULT 0,
+    status           TINYINT(1)   NOT NULL DEFAULT 1,
+    created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_siswa_unit_tp (siswa_id, unit_id, id_tp),
+    KEY idx_unit (unit_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT IGNORE INTO master_unit (id_unit, kode, nama, aktif) VALUES
+    (1, 'mts', 'MTs', 1), (2, 'madin', 'Madin', 1), (3, 'tpq', 'TPQ', 1);
+
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE master_kelas ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1',
+    'SELECT ''master_kelas.unit_id sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'master_kelas' AND COLUMN_NAME = 'unit_id');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE kelas_siswa ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1',
+    'SELECT ''kelas_siswa.unit_id sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'kelas_siswa' AND COLUMN_NAME = 'unit_id');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ---------------------------------------------------------------------
 -- 3. Jenis tagihan, tagihan, dan keringanan
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS cbt_jenis_tagihan (
@@ -186,6 +228,7 @@ CREATE TABLE IF NOT EXISTS cbt_jenis_tagihan (
     nominal_default  INT UNSIGNED NOT NULL DEFAULT 0,
     boleh_cicil      TINYINT(1)   NOT NULL DEFAULT 0,
     maks_cicilan     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+    unit_id          TINYINT UNSIGNED NOT NULL DEFAULT 0,
     keterangan       VARCHAR(255) NULL,
     aktif            TINYINT(1)   NOT NULL DEFAULT 1,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -200,6 +243,13 @@ SET @sql = (SELECT IF(COUNT(*) = 0,
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cbt_jenis_tagihan' AND COLUMN_NAME = 'boleh_cicil');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE cbt_jenis_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0',
+    'SELECT ''cbt_jenis_tagihan.unit_id sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cbt_jenis_tagihan' AND COLUMN_NAME = 'unit_id');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 CREATE TABLE IF NOT EXISTS cbt_tagihan (
     id             INT UNSIGNED NOT NULL AUTO_INCREMENT,
     siswa_id       INT          NOT NULL,
@@ -209,6 +259,7 @@ CREATE TABLE IF NOT EXISTS cbt_tagihan (
     keterangan     VARCHAR(255) NULL,
     nominal        INT UNSIGNED NOT NULL,
     diskon         INT UNSIGNED NOT NULL DEFAULT 0,
+    unit_id        TINYINT UNSIGNED NOT NULL DEFAULT 0,
     jatuh_tempo    DATE         NULL,
     created_at     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
@@ -216,6 +267,13 @@ CREATE TABLE IF NOT EXISTS cbt_tagihan (
     KEY idx_jenis (jenis_id),
     KEY idx_siswa (siswa_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE cbt_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0',
+    'SELECT ''cbt_tagihan.unit_id sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cbt_tagihan' AND COLUMN_NAME = 'unit_id');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS cbt_keringanan (
     id          INT UNSIGNED NOT NULL AUTO_INCREMENT,
