@@ -226,6 +226,18 @@ if (!function_exists('skema_tambahan_pastikan')) {
             }
         }
 
+        // Import Excel lama tidak mengisi NIK/kewarganegaraan. Beri default
+        // agar INSERT tidak gagal pada MySQL dengan STRICT_TRANS_TABLES.
+        foreach (array(
+            array('nik', "ALTER TABLE master_siswa MODIFY COLUMN nik VARCHAR(30) NOT NULL DEFAULT ''"),
+            array('warga_negara', "ALTER TABLE master_siswa MODIFY COLUMN warga_negara VARCHAR(20) NOT NULL DEFAULT ''")
+        ) as $field) {
+            $col = $db->query("SHOW COLUMNS FROM master_siswa LIKE '" . $field[0] . "'")->row();
+            if ($col && $col->Default === null) {
+                $db->query($field[1]);
+            }
+        }
+
         // Pastikan nilai 'tunai' tersedia pada metode pembayaran.
         $metode = $db->query("SHOW COLUMNS FROM cbt_pembayaran_spp LIKE 'metode_pembayaran'")->row();
         if ($metode && stripos((string) $metode->Type, "'tunai'") === false) {
@@ -267,5 +279,120 @@ if (!function_exists('skema_tambahan_pastikan')) {
 
         $db->db_debug = $debug;
         return true;
+    }
+}
+
+if (!function_exists('siswa_import_normalisasi')) {
+    /**
+     * Lengkapi field wajib yang kosong pada import Excel siswa.
+     *
+     * File template boleh hanya berisi No, Nama, dan Kelas Awal. NIS, NISN,
+     * username, dan password akan dibuat otomatis agar validasi dan INSERT
+     * tetap lolos. Nilai yang sudah diisi pengguna tidak diubah.
+     *
+     * @param array $rows Baris hasil parser Excel (key = indeks kolom 1-based)
+     * @param object $db  CodeIgniter DB instance
+     * @return array
+     */
+    function siswa_import_normalisasi($rows, $db)
+    {
+        if (!is_array($rows)) {
+            return $rows;
+        }
+
+        $used = array('nis' => array(), 'nisn' => array(), 'username' => array());
+        $existing = $db->select('nis, nisn, username')->get('master_siswa');
+        foreach ($existing->result_array() as $r) {
+            foreach ($used as $k => $dummy) {
+                $v = strtolower(trim((string) ($r[$k] ?? '')));
+                if ($v !== '') {
+                    $used[$k][$v] = true;
+                }
+            }
+        }
+
+        $out = array();
+        foreach ($rows as $i => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $no = (int) ($row[1] ?? ($i + 1));
+            if ($no <= 0) {
+                $no = $i + 1;
+            }
+            $nama = trim((string) ($row[4] ?? ''));
+
+            // NIS: 8 digit, diawali 10000000 + nomor urut Excel.
+            $nis = trim((string) ($row[3] ?? ''));
+            if ($nis === '') {
+                $candidate = 10000000 + $no;
+                while (isset($used['nis'][(string) $candidate])) {
+                    $candidate++;
+                }
+                $nis = (string) $candidate;
+            }
+            $used['nis'][strtolower($nis)] = true;
+            $row[3] = $nis;
+
+            // NISN: 10 digit, prefix 991... agar tidak bentrok dengan data lama.
+            $nisn = trim((string) ($row[2] ?? ''));
+            if ($nisn === '') {
+                $candidate = 9910000000 + $no;
+                while (isset($used['nisn'][(string) $candidate])) {
+                    $candidate++;
+                }
+                $nisn = (string) $candidate;
+            }
+            $used['nisn'][strtolower($nisn)] = true;
+            $row[2] = $nisn;
+
+            // Username: slug nama + nomor urut, dijamin unik.
+            $username = trim((string) ($row[6] ?? ''));
+            if ($username === '') {
+                $base = preg_replace('/[^a-z0-9]+/', '-', strtolower($nama));
+                $base = trim($base, '-');
+                if ($base === '') {
+                    $base = 'siswa';
+                }
+                $base = substr($base, 0, 35);
+                $candidate = $base . '-' . $no;
+                while (isset($used['username'][strtolower($candidate)])) {
+                    $no++;
+                    $candidate = $base . '-' . $no;
+                }
+                $username = $candidate;
+            }
+            $used['username'][strtolower($username)] = true;
+            $row[6] = $username;
+
+            // Password default; pengguna bisa mengubahnya setelah import.
+            $password = trim((string) ($row[7] ?? ''));
+            if ($password === '') {
+                $password = '123456';
+            }
+            $row[7] = $password;
+
+            // Field lain yang bertipe NOT NULL / sering dibiarkan kosong.
+            if (trim((string) ($row[5] ?? '')) === '') {
+                $row[5] = 'L';
+            }
+            if (trim((string) ($row[8] ?? '')) === '') {
+                $row[8] = '7';
+            }
+            if (trim((string) ($row[14] ?? '')) === '') {
+                $row[14] = '0';
+            }
+            if (trim((string) ($row[16] ?? '')) === '') {
+                $row[16] = '1';
+            }
+            if (trim((string) ($row[25] ?? '')) === '') {
+                $row[25] = '0';
+            }
+
+            $out[$i] = $row;
+        }
+
+        return $out;
     }
 }
