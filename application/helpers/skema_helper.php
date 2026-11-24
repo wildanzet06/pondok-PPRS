@@ -104,6 +104,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 nominal_default  INT UNSIGNED NOT NULL DEFAULT 0,
                 boleh_cicil      TINYINT(1)   NOT NULL DEFAULT 0,
                 maks_cicilan     TINYINT UNSIGNED NOT NULL DEFAULT 0,
+                seikhlasnya      TINYINT(1)   NOT NULL DEFAULT 0,
                 unit_id          TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 keterangan       VARCHAR(255) NULL,
                 aktif            TINYINT(1)   NOT NULL DEFAULT 1,
@@ -213,6 +214,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
             array('cbt_setting_spp',    'kunci_kwitansi',    'ALTER TABLE cbt_setting_spp ADD COLUMN kunci_kwitansi VARCHAR(64) NULL'),
             array('cbt_jenis_tagihan',  'boleh_cicil',       'ALTER TABLE cbt_jenis_tagihan ADD COLUMN boleh_cicil TINYINT(1) NOT NULL DEFAULT 0'),
             array('cbt_jenis_tagihan',  'maks_cicilan',      'ALTER TABLE cbt_jenis_tagihan ADD COLUMN maks_cicilan TINYINT UNSIGNED NOT NULL DEFAULT 0'),
+            array('cbt_jenis_tagihan',  'seikhlasnya',       'ALTER TABLE cbt_jenis_tagihan ADD COLUMN seikhlasnya TINYINT(1) NOT NULL DEFAULT 0'),
             array('master_kelas',       'unit_id',           'ALTER TABLE master_kelas ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
             array('kelas_siswa',        'unit_id',           'ALTER TABLE kelas_siswa ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
             array('cbt_jenis_tagihan',  'unit_id',           'ALTER TABLE cbt_jenis_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0'),
@@ -260,6 +262,14 @@ if (!function_exists('skema_tambahan_pastikan')) {
                     VALUES ('SPP', 'SPP Bulanan', 'bulanan', 500000, 1)");
         $db->query("UPDATE cbt_jenis_tagihan SET nominal_default = 500000
                     WHERE kode = 'SPP' AND nominal_default = 0");
+
+        // SPP TPQ bersifat sukarela: wali santri mengisi nominalnya sendiri.
+        $unit_tpq = $db->query("SELECT id_unit FROM master_unit WHERE kode = 'tpq' LIMIT 1")->row();
+        $id_tpq   = $unit_tpq ? (int) $unit_tpq->id_unit : 3;
+        $db->query("INSERT IGNORE INTO cbt_jenis_tagihan
+                    (kode, nama, tipe, nominal_default, aktif, unit_id, seikhlasnya, keterangan)
+                    VALUES ('SPP_TPQ', 'SPP TPQ (Seikhlasnya)', 'bulanan', 0, 1, $id_tpq, 1,
+                            'Nominal diisi wali santri saat pembayaran')");
 
         // Bacaan/stimulus bersama untuk beberapa soal.
         if (!$db->table_exists('cbt_bacaan')) {

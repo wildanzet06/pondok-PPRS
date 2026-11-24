@@ -202,7 +202,11 @@ $qs_filter = http_build_query(array_filter($filter));
                                         ?>
                                     </td>
                                     <td>
-                                        <?= $rp($t->nominal_bersih); ?>
+                                        <?php if (!empty($t->seikhlasnya)): ?>
+                                            <span class="text-primary font-weight-bold">Seikhlasnya</span>
+                                        <?php else: ?>
+                                            <?= $rp($t->nominal_bersih); ?>
+                                        <?php endif; ?>
                                         <?php if ((int) $t->diskon > 0): ?>
                                             <br><small class="text-muted">
                                                 <s><?= $rp($t->nominal); ?></s> &minus; diskon <?= $rp($t->diskon); ?>
@@ -250,7 +254,7 @@ $qs_filter = http_build_query(array_filter($filter));
                                                     <i class="fab fa-whatsapp"></i> WA
                                                 </a>
                                             <?php endif; ?>
-                                        <?php if ($t->status != 'lunas' || $t->gratis): ?>
+                                        <?php if (($t->status != 'lunas' || $t->gratis) && empty($t->seikhlasnya)): ?>
                                             <button type="button" class="btn btn-warning btn-xs"
                                                     onclick="ubahDiskon(<?= (int) $t->id; ?>, <?= (int) $t->nominal; ?>, <?= (int) $t->diskon; ?>, '<?= html_escape(addslashes($t->nama)); ?>')">
                                                 <i class="fas fa-percent"></i> Diskon

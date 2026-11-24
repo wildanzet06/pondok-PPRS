@@ -32,6 +32,15 @@
                 </div>
             <?php endif; ?>
 
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle mr-1"></i>
+                <b>SPP TPQ seikhlasnya</b> tidak diatur lewat nominal di atas. Nominal di sini hanya untuk SPP
+                MTs/Madin. Untuk TPQ, buka
+                <a href="<?= site_url('tagihan/jenis'); ?>" class="alert-link"><b>Jenis Tagihan</b></a>
+                → <b>SPP TPQ (Seikhlasnya)</b>: centang pilihan <i>Nominal seikhlasnya</i> dan unit <b>TPQ</b>.
+                Wali santri mengisi sendiri nominalnya (minimal Rp 1.000) saat bayar.
+            </div>
+
             <div class="row">
                 <!-- Nominal & instruksi -->
                 <div class="col-12 col-xl-5">

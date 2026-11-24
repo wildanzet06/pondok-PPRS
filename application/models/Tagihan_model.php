@@ -3,6 +3,9 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Tagihan_model extends CI_Model {
 
+    // Nominal minimal per pembayaran untuk tagihan "seikhlasnya".
+    public $min_seikhlasnya = 1000;
+
     public function __construct() {
         parent::__construct();
         // Pastikan tabel tambahan (keuangan/tagihan/presensi) tersedia.
@@ -234,6 +237,8 @@ class Tagihan_model extends CI_Model {
     // Membuat tagihan untuk daftar siswa $ids. Siswa yang sudah punya tagihan
     // yang sama dilewati. Keringanan siswa diterapkan otomatis.
     public function buat_massal($jenis, $bulan, $tahun, $nominal, $jatuh_tempo, $keterangan, $ids) {
+        $seikhlasnya = !empty($jenis->seikhlasnya);
+
         // Siswa yang sudah punya tagihan yang sama
         $this->db->select('siswa_id');
         $this->db->where('jenis_id', (int) $jenis->id);
@@ -267,8 +272,8 @@ class Tagihan_model extends CI_Model {
             $diskon = isset($keringanan[$id_siswa])
                 ? $this->hitung_diskon($keringanan[$id_siswa], $nominal)
                 : 0;
-            if ($diskon > 0)             $hasil['keringanan']++;
-            if ($diskon >= (int) $nominal) $hasil['gratis']++;
+            if (!$seikhlasnya && $diskon > 0)             $hasil['keringanan']++;
+            if (!$seikhlasnya && $diskon >= (int) $nominal) $hasil['gratis']++;
 
             $baris[] = array(
                 'siswa_id'      => $id_siswa,
@@ -307,7 +312,7 @@ class Tagihan_model extends CI_Model {
     // "tunggakan" = belum + cicilan (semua yang belum lunas)
     public function list_tagihan($filter = array()) {
         $sql = "SELECT t.*, s.nis, s.nama, s.hp,
-                       j.nama AS jenis_nama, j.kode AS jenis_kode, j.boleh_cicil, j.maks_cicilan,
+                       j.nama AS jenis_nama, j.kode AS jenis_kode, j.boleh_cicil, j.maks_cicilan, j.seikhlasnya,
                        (SELECT COALESCE(SUM(p.jumlah_bayar), 0)
                           FROM cbt_pembayaran_spp p
                          WHERE p.tagihan_id = t.id AND p.status_pembayaran = 'success') AS terbayar,
@@ -356,17 +361,28 @@ class Tagihan_model extends CI_Model {
         $hasil = array();
 
         foreach ($rows as $r) {
-            $r->nominal_bersih = max(0, (int) $r->nominal - (int) $r->diskon);
+            $r->seikhlasnya    = !empty($r->seikhlasnya);
+            $r->min_seikhlasnya = (int) $this->min_seikhlasnya;
+            $r->nominal_bersih = $r->seikhlasnya ? 0 : max(0, (int) $r->nominal - (int) $r->diskon);
             $r->terbayar       = (int) $r->terbayar;
             $r->pending_manual = (int) $r->pending_manual;
             $r->jml_cicilan    = (int) $r->jml_cicilan;
             $r->maks_cicilan   = (int) $r->maks_cicilan;
             $r->unit_id        = (int) $r->unit_id;
             $r->unit_nama      = unit_nama($r->unit_id);
-            $r->sisa           = max(0, $r->nominal_bersih - $r->terbayar);
-            $r->gratis         = ($r->nominal_bersih == 0);
+            $r->sisa           = $r->seikhlasnya ? 0 : max(0, $r->nominal_bersih - $r->terbayar);
+            $r->gratis         = (!$r->seikhlasnya && $r->nominal_bersih == 0);
 
-            if ($r->terbayar >= $r->nominal_bersih) {
+            if ($r->seikhlasnya) {
+                // Satu pembayaran yang terverifikasi dianggap lunas.
+                if ($r->terbayar > 0) {
+                    $r->status = 'lunas';
+                } elseif ($r->pending_manual > 0) {
+                    $r->status = 'cicilan';
+                } else {
+                    $r->status = 'belum';
+                }
+            } elseif ($r->terbayar >= $r->nominal_bersih) {
                 $r->status = 'lunas';
             } elseif ($r->terbayar > 0) {
                 $r->status = 'cicilan';

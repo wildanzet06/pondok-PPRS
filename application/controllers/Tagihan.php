@@ -143,6 +143,7 @@ class Tagihan extends CI_Controller {
         if (!array_key_exists($unit, unit_pilihan())) {
             $unit = 0; // 0 = berlaku untuk semua unit
         }
+        $seikhlasnya = $this->input->post('seikhlasnya') ? 1 : 0;
 
         if (!in_array($tipe, array('bulanan', 'sekali'))) {
             $tipe = 'sekali';
@@ -154,6 +155,13 @@ class Tagihan extends CI_Controller {
         // Tanpa izin cicilan, batas cicilan tidak relevan
         if (!$cicil) {
             $maks = 0;
+        }
+        // Seikhlasnya: nominal ditentukan wali santri, jadi tidak memakai
+        // nominal bawaan maupun cicilan.
+        if ($seikhlasnya) {
+            $nominal = 0;
+            $cicil   = 0;
+            $maks    = 0;
         }
 
         $balik = 'tagihan/jenis' . ($id ? '?edit=' . $id : '');
@@ -176,6 +184,7 @@ class Tagihan extends CI_Controller {
             'nominal_default' => $nominal,
             'boleh_cicil'     => $cicil,
             'maks_cicilan'    => $maks,
+            'seikhlasnya'     => $seikhlasnya,
             'unit_id'         => $unit,
             'keterangan'      => ($ket !== '') ? mb_substr($ket, 0, 255) : null,
             'aktif'           => $aktif
@@ -296,9 +305,10 @@ class Tagihan extends CI_Controller {
             return;
         }
 
+        $seikhlasnya = !empty($jenis->seikhlasnya);
         $bulan    = $this->input->post('bulan');
         $tahun    = (int) $this->input->post('tahun');
-        $nominal  = (int) preg_replace('/\D/', '', (string) $this->input->post('nominal'));
+        $nominal  = $seikhlasnya ? 0 : (int) preg_replace('/\D/', '', (string) $this->input->post('nominal'));
         $ket      = trim((string) $this->input->post('keterangan'));
         $tempo    = trim((string) $this->input->post('jatuh_tempo'));
         $target   = $this->input->post('target') == 'aktif' ? 'aktif' : 'semua';
@@ -308,7 +318,7 @@ class Tagihan extends CI_Controller {
             $unit_id = 0;
         }
 
-        if ($nominal <= 0) {
+        if (!$seikhlasnya && $nominal <= 0) {
             $this->session->set_flashdata('error', 'Nominal harus lebih dari 0.');
             redirect('tagihan/buat');
             return;

@@ -1,5 +1,6 @@
 <?php
 $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
+$min_seikhlasnya = isset($min_seikhlasnya) ? (int) $min_seikhlasnya : 1000;
 ?>
 <div class="content-wrapper bg-white pt-4">
     <section class="content-header">
@@ -66,6 +67,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                             </tr>
                                             <?php foreach ($grup['items'] as $t): ?>
                                             <?php
+                                            $seikhlas = !empty($t->seikhlasnya);
                                             $label = $t->jenis_nama;
                                             if (!empty($t->unit_id)) {
                                                 $label .= ' · ' . $t->unit_nama;
@@ -81,17 +83,25 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                             <tr>
                                                 <td>
                                                     <?= html_escape($label); ?>
+                                                    <?php if ($seikhlas): ?>
+                                                        <span class="badge badge-primary ml-1">Seikhlasnya</span>
+                                                    <?php endif; ?>
                                                     <?php if ($t->jatuh_tempo): ?>
                                                         <br><small class="text-muted">Jatuh tempo <?= date('d/m/Y', strtotime($t->jatuh_tempo)); ?></small>
                                                     <?php endif; ?>
                                                 </td>
                                                 <td class="text-nowrap">
-                                                    <?= $rp($t->nominal_bersih); ?>
-                                                    <?php if ((int) $t->diskon > 0): ?>
-                                                        <br><small class="text-muted">keringanan <?= $rp($t->diskon); ?></small>
+                                                    <?php if ($seikhlas): ?>
+                                                        <span class="text-primary font-weight-bold">Seikhlasnya</span>
+                                                        <br><small class="text-muted">min. <?= $rp($min_seikhlasnya); ?></small>
+                                                    <?php else: ?>
+                                                        <?= $rp($t->nominal_bersih); ?>
+                                                        <?php if ((int) $t->diskon > 0): ?>
+                                                            <br><small class="text-muted">keringanan <?= $rp($t->diskon); ?></small>
+                                                        <?php endif; ?>
                                                     <?php endif; ?>
                                                 </td>
-                                                <td class="text-nowrap"><?= $rp($t->sisa); ?></td>
+                                                <td class="text-nowrap"><?= $seikhlas ? '&mdash;' : $rp($t->sisa); ?></td>
                                                 <td>
                                                     <?php if ($t->gratis): ?>
                                                         <span class="badge badge-primary">Gratis</span>
@@ -106,9 +116,11 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                 <td class="text-nowrap">
                                                     <?php if ($t->status == 'lunas'): ?>
                                                         &nbsp;
-                                                    <?php elseif ($maks <= 0 || (!$t->boleh_cicil && $t->pending_manual > 0)): ?>
+                                                    <?php elseif ($seikhlas && $t->pending_manual > 0): ?>
                                                         <small class="text-muted">menunggu verifikasi</small>
-                                                    <?php elseif ($t->boleh_cicil && (int) $t->maks_cicilan > 0 && (int) $t->jml_cicilan >= (int) $t->maks_cicilan): ?>
+                                                    <?php elseif (!$seikhlas && ($maks <= 0 || (!$t->boleh_cicil && $t->pending_manual > 0))): ?>
+                                                        <small class="text-muted">menunggu verifikasi</small>
+                                                    <?php elseif (!$seikhlas && $t->boleh_cicil && (int) $t->maks_cicilan > 0 && (int) $t->jml_cicilan >= (int) $t->maks_cicilan): ?>
                                                         <small class="text-muted">sudah mencapai batas <?= (int) $t->maks_cicilan; ?> kali cicilan</small>
                                                     <?php else: ?>
                                                         <button type="button" class="btn btn-success btn-sm btn-bayar"
@@ -117,6 +129,8 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                                 data-sisa="<?= (int) $t->sisa; ?>"
                                                                 data-maks="<?= (int) $maks; ?>"
                                                                 data-min="<?= (int) $min; ?>"
+                                                                data-seikhlas="<?= $seikhlas ? 1 : 0; ?>"
+                                                                data-min-seikhlas="<?= (int) $min_seikhlasnya; ?>"
                                                                 data-cicil="<?= $t->boleh_cicil ? 1 : 0; ?>"
                                                                 data-maks-cicilan="<?= (int) $t->maks_cicilan; ?>"
                                                                 data-jml-cicilan="<?= (int) $t->jml_cicilan; ?>">
@@ -260,24 +274,33 @@ $(function () {
         var b = $(this);
         var maks = parseInt(b.data('maks'), 10);
         var min  = parseInt(b.data('min'), 10);
+        var seikhlas = parseInt(b.data('seikhlas'), 10) === 1;
+        var minSeikhlas = parseInt(b.data('min-seikhlas'), 10) || 1000;
         var cicil = parseInt(b.data('cicil'), 10) === 1;
         var batasCicil = parseInt(b.data('maks-cicilan'), 10) || 0;
         var jmlCicil = parseInt(b.data('jml-cicilan'), 10) || 0;
 
         $('#f_tagihan').val(b.data('id'));
         $('#f_label').text(b.data('label'));
-        $('#f_jumlah').val(maks);
+        $('#f_jumlah').removeAttr('max');
 
-        if (cicil) {
-            $('#f_jumlah').prop('readonly', false).attr({min: min, max: maks});
-            var info = 'Tagihan ini boleh dicicil: isi antara ' + rupiah(min) + ' dan ' + rupiah(maks) + '.';
-            if (batasCicil > 0) {
-                info += ' Maksimal ' + batasCicil + ' kali (' + jmlCicil + ' kali sudah dibayar).';
-            }
-            $('#f_info').text(info);
+        if (seikhlas) {
+            $('#f_jumlah').val('').prop('readonly', false).attr('min', minSeikhlas);
+            $('#f_info').text('Isi seikhlasnya, minimal ' + rupiah(minSeikhlas)
+                + '. Setelah pembayaran diverifikasi, tagihan dianggap lunas.');
         } else {
-            $('#f_jumlah').prop('readonly', true);
-            $('#f_info').text('Tagihan ini dibayar penuh sebesar ' + rupiah(maks) + '.');
+            $('#f_jumlah').val(maks);
+            if (cicil) {
+                $('#f_jumlah').prop('readonly', false).attr({min: min, max: maks});
+                var info = 'Tagihan ini boleh dicicil: isi antara ' + rupiah(min) + ' dan ' + rupiah(maks) + '.';
+                if (batasCicil > 0) {
+                    info += ' Maksimal ' + batasCicil + ' kali (' + jmlCicil + ' kali sudah dibayar).';
+                }
+                $('#f_info').text(info);
+            } else {
+                $('#f_jumlah').prop('readonly', true).attr('min', 1);
+                $('#f_info').text('Tagihan ini dibayar penuh sebesar ' + rupiah(maks) + '.');
+            }
         }
 
         $('input[name=metode][value=manual]').prop('checked', true).trigger('change');

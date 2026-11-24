@@ -49,7 +49,8 @@
                                         <option value="<?= (int) $j->id; ?>"
                                                 data-tipe="<?= $j->tipe; ?>"
                                                 data-unit="<?= (int) $j->unit_id; ?>"
-                                                data-nominal="<?= (int) $j->nominal_default; ?>">
+                                                data-nominal="<?= (int) $j->nominal_default; ?>"
+                                                data-seikhlas="<?= !empty($j->seikhlasnya) ? 1 : 0; ?>">
                                             <?= html_escape($j->nama); ?>
                                             (<?= $j->tipe == 'bulanan' ? 'bulanan' : 'sekali bayar'; ?>)
                                         </option>
@@ -86,7 +87,7 @@
                             <div class="form-group">
                                 <label>Nominal per siswa (Rp)</label>
                                 <input type="number" name="nominal" id="nominal" min="1" class="form-control" required>
-                                <small class="text-muted">
+                                <small class="text-muted" id="info-nominal">
                                     Diisi otomatis dari nominal bawaan jenis tagihan. Jika SPP naik, ubah di sini
                                     (atau di menu Jenis Tagihan). Tagihan lama tidak ikut berubah.
                                 </small>
@@ -162,6 +163,7 @@
         var jenis = document.getElementById('jenis_id');
         var grup  = document.getElementById('grup_periode');
         var nom   = document.getElementById('nominal');
+        var info  = document.getElementById('info-nominal');
         var form  = document.getElementById('formBuat');
         var unit  = document.getElementById('unit_id');
         var kelas = document.getElementById('id_kelas');
@@ -183,8 +185,17 @@
 
         function sesuaikan() {
             var opt = jenis.options[jenis.selectedIndex];
+            var seikhlas = opt.getAttribute('data-seikhlas') === '1';
             grup.style.display = (opt.getAttribute('data-tipe') === 'bulanan') ? '' : 'none';
-            nom.value = opt.getAttribute('data-nominal') || '';
+            nom.value = seikhlas ? 0 : (opt.getAttribute('data-nominal') || '');
+            nom.disabled = seikhlas;
+            nom.required = !seikhlas;
+            if (info) {
+                info.textContent = seikhlas
+                    ? 'Jenis ini seikhlasnya: nominal diisi wali santri saat pembayaran. Biarkan 0 di sini.'
+                    : 'Diisi otomatis dari nominal bawaan jenis tagihan. Jika SPP naik, ubah di sini '
+                      + '(atau di menu Jenis Tagihan). Tagihan lama tidak ikut berubah.';
+            }
             if (unit && opt.getAttribute('data-unit') !== null) {
                 unit.value = opt.getAttribute('data-unit');
             }

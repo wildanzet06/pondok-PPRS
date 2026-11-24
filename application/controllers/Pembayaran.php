@@ -6,6 +6,9 @@ class Pembayaran extends CI_Controller {
     // Cicilan minimal per pembayaran (Rp). Jika sisa tagihan lebih kecil, boleh melunasi sisanya.
     const MIN_CICILAN = 10000;
 
+    // Nominal minimal untuk tagihan "seikhlasnya" (SPP TPQ).
+    const MIN_SEIKHLASNYA = 1000;
+
     // Method yang boleh diakses TANPA login (dipanggil server Midtrans, bukan manusia)
     private $public_methods = array('midtrans_notification');
 
@@ -136,6 +139,21 @@ class Pembayaran extends CI_Controller {
         if ($t->status == 'lunas') {
             $this->session->set_flashdata('error', 'Tagihan ini sudah lunas.');
             return false;
+        }
+
+        // SPP seikhlasnya: wali santri bebas mengisi nominal, minimal Rp 1.000.
+        if (!empty($t->seikhlasnya)) {
+            if ($t->pending_manual > 0) {
+                $this->session->set_flashdata('error', 'Pembayaran untuk tagihan ini sedang menunggu verifikasi admin.');
+                return false;
+            }
+            $jumlah = (int) preg_replace('/\D/', '', (string) $this->input->post('jumlah_bayar'));
+            if ($jumlah < self::MIN_SEIKHLASNYA) {
+                $this->session->set_flashdata('error',
+                    'Nominal seikhlasnya minimal Rp ' . number_format(self::MIN_SEIKHLASNYA, 0, ',', '.') . '.');
+                return false;
+            }
+            return array($t, $jumlah);
         }
 
         // Bagian yang masih boleh dibayar = sisa dikurangi transfer yang menunggu verifikasi
@@ -408,13 +426,16 @@ class Pembayaran extends CI_Controller {
         $this->load->model('Tagihan_model');
         $tagihan = array();
         foreach ($this->Tagihan_model->tagihan_siswa($siswa->id_siswa) as $t) {
-            if ($t->status === 'lunas' || (int) $t->sisa <= 0) {
+            $seikhlas = !empty($t->seikhlasnya);
+            if ($t->status === 'lunas' || (!$seikhlas && (int) $t->sisa <= 0)) {
                 continue;
             }
             $tagihan[] = array(
-                'id'    => (int) $t->id,
-                'label' => $this->_label_tagihan($t),
-                'sisa'  => (int) $t->sisa
+                'id'         => (int) $t->id,
+                'label'      => $this->_label_tagihan($t),
+                'sisa'       => (int) $t->sisa,
+                'seikhlasnya'=> $seikhlas ? 1 : 0,
+                'min'        => $seikhlas ? self::MIN_SEIKHLASNYA : 0
             );
         }
 
@@ -468,7 +489,8 @@ class Pembayaran extends CI_Controller {
             if (!$t || (int) $t->siswa_id !== (int) $siswa->id_siswa) {
                 return $this->_json_out(array('status' => false, 'msg' => 'Tagihan tidak cocok dengan siswa yang dipilih.'));
             }
-            if ((int) $t->sisa <= 0) {
+            $seikhlas = !empty($t->seikhlasnya);
+            if (!$seikhlas && (int) $t->sisa <= 0) {
                 return $this->_json_out(array('status' => false, 'msg' => 'Tagihan ini sudah lunas.'));
             }
             if ($jumlah <= 0) {
@@ -477,21 +499,33 @@ class Pembayaran extends CI_Controller {
             // Perhitungkan transfer manual yang masih menunggu verifikasi.
             $pending = isset($t->pending_manual) ? (float) $t->pending_manual : 0;
             $maks = (float) $t->sisa - $pending;
-            if ($maks <= 0 || (!$t->boleh_cicil && $pending > 0)) {
-                return $this->_json_out(array('status' => false, 'msg' =>
-                    'Pembayaran untuk tagihan ini sedang menunggu verifikasi admin.'));
-            }
-            $pesan_batas = $this->_pesan_batas_cicilan($t);
-            if ($pesan_batas !== null) {
-                return $this->_json_out(array('status' => false, 'msg' => $pesan_batas));
-            }
-            if (!$t->boleh_cicil) {
-                // Tagihan sekali bayar: nominal mengikuti sisa yang belum dicadangkan.
-                $jumlah = $maks;
-            } elseif ($jumlah > $maks) {
-                return $this->_json_out(array('status' => false, 'msg' =>
-                    'Jumlah melebihi sisa tagihan yang belum menunggu verifikasi (Rp '
-                    . number_format($maks, 0, ',', '.') . ').'));
+
+            if ($seikhlas) {
+                if ($pending > 0) {
+                    return $this->_json_out(array('status' => false, 'msg' =>
+                        'Pembayaran untuk tagihan ini sedang menunggu verifikasi admin.'));
+                }
+                if ($jumlah < self::MIN_SEIKHLASNYA) {
+                    return $this->_json_out(array('status' => false, 'msg' =>
+                        'Nominal seikhlasnya minimal Rp ' . number_format(self::MIN_SEIKHLASNYA, 0, ',', '.') . '.'));
+                }
+            } else {
+                if ($maks <= 0 || (!$t->boleh_cicil && $pending > 0)) {
+                    return $this->_json_out(array('status' => false, 'msg' =>
+                        'Pembayaran untuk tagihan ini sedang menunggu verifikasi admin.'));
+                }
+                $pesan_batas = $this->_pesan_batas_cicilan($t);
+                if ($pesan_batas !== null) {
+                    return $this->_json_out(array('status' => false, 'msg' => $pesan_batas));
+                }
+                if (!$t->boleh_cicil) {
+                    // Tagihan sekali bayar: nominal mengikuti sisa yang belum dicadangkan.
+                    $jumlah = $maks;
+                } elseif ($jumlah > $maks) {
+                    return $this->_json_out(array('status' => false, 'msg' =>
+                        'Jumlah melebihi sisa tagihan yang belum menunggu verifikasi (Rp '
+                        . number_format($maks, 0, ',', '.') . ').'));
+                }
             }
             $label = $this->_label_tagihan($t);
             if ($t->periode_bulan) {
@@ -702,6 +736,7 @@ class Pembayaran extends CI_Controller {
         $data['tagihan_grup'] = $tagihan_grup;
         $data['riwayat']     = $this->Pembayaran_model->get_riwayat_siswa($siswa->id_siswa);
         $data['min_cicilan'] = self::MIN_CICILAN;
+        $data['min_seikhlasnya'] = self::MIN_SEIKHLASNYA;
         $data['midtrans_aktif'] = $this->_midtrans_siap();
 
         $this->load->view('members/siswa/templates/header', $data);

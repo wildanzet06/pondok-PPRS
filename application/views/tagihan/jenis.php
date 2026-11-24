@@ -135,6 +135,17 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                 </div>
                             </div>
 
+                            <div class="form-group mb-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="seikhlasnya" value="1" class="form-check-input" id="seikhlasnya"
+                                           <?= ($e && !empty($e->seikhlasnya)) ? 'checked' : ''; ?>>
+                                    <label class="form-check-label" for="seikhlasnya">
+                                        Nominal seikhlasnya
+                                        <small class="text-muted">(wali santri mengisi sendiri, mis. SPP TPQ)</small>
+                                    </label>
+                                </div>
+                            </div>
+
                             <div class="form-check">
                                 <input type="checkbox" name="aktif" value="1" class="form-check-input" id="aktif"
                                        <?= (!$e || $e->aktif) ? 'checked' : ''; ?>>
@@ -182,7 +193,13 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                     <span class="badge badge-secondary">Sekali bayar</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?= $rp($j->nominal_default); ?></td>
+                                            <td>
+                                                <?php if (!empty($j->seikhlasnya)): ?>
+                                                    <span class="badge badge-primary">Seikhlasnya</span>
+                                                <?php else: ?>
+                                                    <?= $rp($j->nominal_default); ?>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <?php if (!empty($j->boleh_cicil)): ?>
                                                     <span class="badge badge-info">Boleh</span>
@@ -225,19 +242,29 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
         var $cicil = $('#boleh_cicil');
         var $tipe = $('select[name="tipe"]');
         var $wrap = $('#wrap_maks_cicilan');
+        var $seikhlas = $('#seikhlasnya');
+        var $nominal = $('input[name="nominal_default"]');
 
         function perbarui() {
+            var seikhlas = $seikhlas.prop('checked');
             var bulanan = $tipe.val() === 'bulanan';
-            if (bulanan) {
+
+            $nominal.prop('disabled', seikhlas);
+            if (seikhlas) {
+                $nominal.val(0);
+            }
+
+            if (seikhlas || bulanan) {
                 $cicil.prop('checked', false).prop('disabled', true);
             } else {
                 $cicil.prop('disabled', false);
             }
-            $wrap.toggle(!bulanan && $cicil.prop('checked'));
+            $wrap.toggle(!seikhlas && !bulanan && $cicil.prop('checked'));
         }
 
         $cicil.on('change', perbarui);
         $tipe.on('change', perbarui);
+        $seikhlas.on('change', perbarui);
         perbarui();
     });
 </script>

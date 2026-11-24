@@ -74,7 +74,12 @@ if (!function_exists('wa_pesan_tagihan')) {
         $baris[] = ($tagihan->nama ?? '-') . (isset($tagihan->nis) && $tagihan->nis ? ' (' . $tagihan->nis . ')' : '');
         $baris[] = '';
         $baris[] = 'Tagihan : ' . $label;
-        $baris[] = 'Jumlah   : ' . $rp($tagihan->sisa ?? 0);
+        if (!empty($tagihan->seikhlasnya)) {
+            $min = (int) ($tagihan->min_seikhlasnya ?? 1000);
+            $baris[] = 'Jumlah   : Seikhlasnya (minimal ' . $rp($min) . ')';
+        } else {
+            $baris[] = 'Jumlah   : ' . $rp($tagihan->sisa ?? 0);
+        }
         if (!empty($tagihan->jatuh_tempo)) {
             $baris[] = 'Jatuh tempo : ' . date('d/m/Y', strtotime($tagihan->jatuh_tempo));
         }

@@ -195,19 +195,28 @@
                 if (i === 0) { $radio.prop('checked', true); tagihanAktif = t; }
                 $item.append($radio)
                      .append($('<b>').text(t.label))
-                     .append($('<span class="text-muted ml-2">').text('sisa ' + rupiah(t.sisa)));
+                     .append($('<span class="text-muted ml-2">').text(
+                         t.seikhlasnya ? 'seikhlasnya' : ('sisa ' + rupiah(t.sisa))));
                 $w.append($item);
             });
+
+            function isiNominal() {
+                if (!tagihanAktif) return;
+                $('#f-jumlah').val(tagihanAktif.seikhlasnya ? '' : tagihanAktif.sisa);
+                $('#info-sisa').text(tagihanAktif.seikhlasnya
+                    ? ('Minimal ' + rupiah(tagihanAktif.min || 1000))
+                    : ('Sisa tagihan ' + rupiah(tagihanAktif.sisa)));
+            }
 
             $w.find('input[name=tagihan]').on('change', function () {
                 tagihanAktif = null;
                 var id = parseInt($(this).val(), 10);
                 $.each(list, function (i, t) { if (t.id === id) { tagihanAktif = t; } });
-                if (tagihanAktif) { $('#f-jumlah').val(tagihanAktif.sisa); }
+                isiNominal();
                 ringkas();
             });
 
-            if (tagihanAktif) { $('#f-jumlah').val(tagihanAktif.sisa); }
+            isiNominal();
             ringkas();
         }
 
@@ -225,12 +234,17 @@
             var label = tanpaTagihan()
                 ? ('SPP ' + $('#f-bulan').val() + ' ' + $('#f-tahun').val())
                 : (tagihanAktif ? tagihanAktif.label : '—');
+            var keteranganSisa = '';
+            if (!tanpaTagihan() && tagihanAktif) {
+                keteranganSisa = tagihanAktif.seikhlasnya
+                    ? ' <span class="text-muted">(seikhlasnya)</span>'
+                    : ' <span class="text-muted">(sisa ' + rupiah(tagihanAktif.sisa) + ')</span>';
+            }
 
             $r.html(
                 '<div><b>' + siswaAktif.nama + '</b> · Kelas ' + siswaAktif.nama_kelas + ' · NIS ' + siswaAktif.nis + '</div>' +
                 '<div class="text-muted">Untuk: ' + label + '</div>' +
-                '<div class="mt-1">Jumlah: <b>' + rupiah(jumlah) + '</b>' +
-                (!tanpaTagihan() && tagihanAktif ? ' <span class="text-muted">(sisa ' + rupiah(tagihanAktif.sisa) + ')</span>' : '') +
+                '<div class="mt-1">Jumlah: <b>' + rupiah(jumlah) + '</b>' + keteranganSisa +
                 '</div>'
             );
         }
@@ -286,9 +300,18 @@
 
             $('#f-jumlah').on('input', function () {
                 if (!tanpaTagihan() && tagihanAktif) {
-                    var maks = parseInt(tagihanAktif.sisa, 10);
-                    var v = parseInt($(this).val(), 10) || 0;
-                    $('#info-sisa').text(v > maks ? ('Melebihi sisa tagihan (' + rupiah(maks) + ')') : ('Sisa tagihan ' + rupiah(maks)));
+                    var v = parseFloat($(this).val()) || 0;
+                    if (tagihanAktif.seikhlasnya) {
+                        var minS = parseInt(tagihanAktif.min || 1000, 10);
+                        $('#info-sisa').text(v < minS
+                            ? ('Minimal ' + rupiah(minS))
+                            : 'Nominal seikhlasnya');
+                    } else {
+                        var maks = parseInt(tagihanAktif.sisa, 10);
+                        $('#info-sisa').text(v > maks
+                            ? ('Melebihi sisa tagihan (' + rupiah(maks) + ')')
+                            : ('Sisa tagihan ' + rupiah(maks)));
+                    }
                 }
                 ringkas();
             });
@@ -301,7 +324,13 @@
 
                 var jumlah = parseFloat($('#f-jumlah').val()) || 0;
                 if (jumlah <= 0) { galat('Jumlah pembayaran harus lebih dari nol.'); return; }
-                if (!tanpaTagihan() && tagihanAktif && jumlah > parseInt(tagihanAktif.sisa, 10)) {
+                if (!tanpaTagihan() && tagihanAktif && tagihanAktif.seikhlasnya) {
+                    var minS = parseInt(tagihanAktif.min || 1000, 10);
+                    if (jumlah < minS) {
+                        galat('Nominal seikhlasnya minimal ' + rupiah(minS) + '.');
+                        return;
+                    }
+                } else if (!tanpaTagihan() && tagihanAktif && jumlah > parseInt(tagihanAktif.sisa, 10)) {
                     galat('Jumlah melebihi sisa tagihan (' + rupiah(tagihanAktif.sisa) + ').');
                     return;
                 }
