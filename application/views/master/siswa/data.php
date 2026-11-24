@@ -46,9 +46,9 @@
                 </div>
                 <div class="card-body">
                     <div class="alert alert-light border small mb-3">
-                        Keanggotaan unit (MTs / Madin / TPQ) diatur terpisah di
-                        <a href="<?= base_url('unitsiswa') ?>"><b>Unit Murid</b></a>.
-                        Satu murid boleh tergabung di beberapa unit dengan satu akun.
+                        Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
+                        Centang lebih dari satu unit untuk murid dobel &mdash; tetap satu akun.
+                        Jilid TPQ juga diisi di form siswa. Halaman Unit Murid tetap tersedia sebagai fallback.
                     </div>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
@@ -285,6 +285,34 @@
                         </div>
                     </div>
                 </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 col-sm-offset-4">
+                        <label>Unit Murid :</label>
+                    </div>
+                    <div class="col-md-8 col-sm-offset-8">
+                        <?php foreach (unit_pilihan() as $id_unit => $nama_unit): ?>
+                            <label class="form-check form-check-inline mb-1">
+                                <input class="form-check-input unit-siswa-checkbox" type="checkbox"
+                                       name="unit[]" value="<?= (int) $id_unit ?>"
+                                       <?= (int) $id_unit === 1 ? 'checked' : '' ?>>
+                                <span class="form-check-label"><?= html_escape($nama_unit) ?></span>
+                            </label>
+                        <?php endforeach; ?>
+                        <small class="form-text text-muted d-block">
+                            Boleh lebih dari satu. MTs memakai seluruh fitur; Madin/TPQ hanya SPP + absen.
+                        </small>
+                    </div>
+                </div>
+                <div class="row mb-3" id="baris-jilid-siswa">
+                    <div class="col-md-4 col-sm-offset-4">
+                        <label for="jilid">Jilid TPQ :</label>
+                    </div>
+                    <div class="col-md-8 col-sm-offset-8">
+                        <input id="jilid" type="text" class="form-control" name="jilid"
+                               placeholder="Misal: 1" autocomplete="off">
+                        <small class="form-text text-muted">Isi bila murid terdaftar dalam unit TPQ.</small>
+                    </div>
+                </div>
 
             </div>
             <div class="modal-footer">
@@ -311,9 +339,17 @@
     let currentPage = 1;
     let perPage = 10;
     let $pagination, defaultOpts, query, actionBulk;
+    const idUnitTpq = <?= (int) unit_id_tpq() ?>;
+
+    function sinkronJilidSiswa() {
+        const tpqDicentang = $('#formsiswa input.unit-siswa-checkbox[value="' + idUnitTpq + '"]').is(':checked');
+        $('#baris-jilid-siswa').toggle(tpqDicentang);
+    }
 
     $(document).ready(function () {
         ajaxcsrf();
+        sinkronJilidSiswa();
+        $('#formsiswa input.unit-siswa-checkbox').on('change', sinkronJilidSiswa);
         $pagination = $('#pagination');
         defaultOpts = {
             visiblePages: 5,
@@ -485,6 +521,10 @@
         $('#formsiswa').on('submit', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
+            if ($('#formsiswa input.unit-siswa-checkbox:checked').length === 0) {
+                swal.fire({title: "Error", text: "Pilih minimal satu unit murid.", icon: "error"});
+                return;
+            }
             var usernameBaru = $('#username').val();
             var passwordBaru = $('#password').val();
             console.log($(this).serialize());

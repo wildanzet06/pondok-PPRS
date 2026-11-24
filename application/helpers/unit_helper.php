@@ -99,3 +99,186 @@ if (!function_exists('unit_siswa_akses_penuh')) {
         return empty($ids) || in_array(1, $ids, true);
     }
 }
+
+if (!function_exists('unit_id_tpq')) {
+    /** Id unit TPQ dari tabel master_unit (fallback 3 untuk data lama). */
+    function unit_id_tpq()
+    {
+        $CI =& get_instance();
+        static $id = null;
+        if ($id === null) {
+            $id = 3;
+            if ($CI->db->table_exists('master_unit')) {
+                $row = $CI->db->select('id_unit')->where('kode', 'tpq')->get('master_unit')->row();
+                if ($row) {
+                    $id = (int) $row->id_unit;
+                }
+            }
+        }
+        return $id;
+    }
+}
+
+if (!function_exists('unit_siswa_unit_ids_by_id')) {
+    /** Unit yang dicentang untuk sebuah id_siswa (bukan username). */
+    function unit_siswa_unit_ids_by_id($id_siswa)
+    {
+        $CI =& get_instance();
+        $ids = array();
+        if ((int) $id_siswa <= 0 || !$CI->db->table_exists('master_siswa_unit')) {
+            return $ids;
+        }
+        $rows = $CI->db->select('unit_id')
+            ->where('siswa_id', (int) $id_siswa)
+            ->where('status', 1)
+            ->get('master_siswa_unit')->result();
+        foreach ($rows as $r) {
+            $ids[] = (int) $r->unit_id;
+        }
+        return array_values(array_unique($ids));
+    }
+}
+
+if (!function_exists('unit_siswa_jilid')) {
+    /** Jilid TPQ milik siswa; kosong bila siswa bukan anggota TPQ. */
+    function unit_siswa_jilid($id_siswa)
+    {
+        $CI =& get_instance();
+        if ((int) $id_siswa <= 0 || !$CI->db->table_exists('master_siswa_unit')
+            || !$CI->db->field_exists('jilid', 'master_siswa_unit')) {
+            return '';
+        }
+        // Selesaikan dulu: query builder CI3 dipakai bersama, memanggil helper
+        // lain di tengah rantai where() akan menggabungkan kedua query.
+        $id_tpq = unit_id_tpq();
+        $row = $CI->db->select('jilid')
+            ->where('siswa_id', (int) $id_siswa)
+            ->where('unit_id', $id_tpq)
+            ->where('status', 1)
+            ->get('master_siswa_unit')->row();
+        return $row ? trim((string) $row->jilid) : '';
+    }
+}
+
+if (!function_exists('unit_siswa_simpan')) {
+    /**
+     * Tulis ulang keanggotaan unit sebuah siswa secara idempoten.
+     *
+     * $pilihan boleh array checkbox (unit[]) atau string "MTs,Madin" dari Excel.
+     * Tanpa pilihan yang valid, siswa tetap dianggap MTs (akses penuh).
+     * $jilid = null berarti jilid lama dipertahankan; '' berarti dihapus.
+     */
+    function unit_siswa_simpan($id_siswa, $pilihan, $jilid = null)
+    {
+        $CI =& get_instance();
+        $id_siswa = (int) $id_siswa;
+        if ($id_siswa <= 0 || !$CI->db->table_exists('master_siswa_unit')) {
+            return false;
+        }
+
+        $mentah = array();
+        if (is_array($pilihan)) {
+            foreach ($pilihan as $item) {
+                foreach (explode(',', (string) $item) as $bagian) {
+                    $mentah[] = trim($bagian);
+                }
+            }
+        } elseif ($pilihan !== null && $pilihan !== '') {
+            $mentah = explode(',', (string) $pilihan);
+        }
+
+        $valid = array_keys(unit_pilihan());
+        $units = array();
+        foreach ($mentah as $item) {
+            $item = trim($item);
+            if ($item === '' || $item === '0') {
+                continue;
+            }
+            // Terima both "2" dan nama/kode unit ("Madin", "madin", "MTs").
+            $id_unit = (int) $item;
+            if (!$id_unit) {
+                foreach ($valid as $uid) {
+                    if (strcasecmp($item, (string) unit_pilihan()[$uid]) === 0
+                        || strcasecmp($item, unit_kode($uid)) === 0) {
+                        $id_unit = (int) $uid;
+                        break;
+                    }
+                }
+            }
+            if (in_array($id_unit, $valid, true)) {
+                $units[] = $id_unit;
+            }
+        }
+        $units = array_values(array_unique($units));
+        if (!$units) {
+            $units = array(1);
+        }
+
+        $ada_jilid = $CI->db->field_exists('jilid', 'master_siswa_unit');
+        $tpq = unit_id_tpq();
+        if ($jilid === null && $ada_jilid) {
+            $jilid = unit_siswa_jilid($id_siswa);
+        }
+        $jilid = $ada_jilid ? trim((string) $jilid) : '';
+        if ($jilid === '') {
+            $jilid = null;
+        }
+
+        $CI->db->trans_start();
+        $CI->db->delete('master_siswa_unit', array('siswa_id' => $id_siswa));
+        foreach ($units as $id_unit) {
+            $baris = array(
+                'siswa_id' => $id_siswa,
+                'unit_id'  => $id_unit,
+                'id_tp'    => 0,
+                'status'   => 1
+            );
+            if ($ada_jilid && $id_unit === $tpq && $jilid !== null) {
+                $baris['jilid'] = $jilid;
+            }
+            $CI->db->insert('master_siswa_unit', $baris);
+        }
+        $CI->db->trans_complete();
+        return $CI->db->trans_status() !== false;
+    }
+}
+
+if (!function_exists('unit_kode')) {
+    function unit_kode($id_unit)
+    {
+        $CI =& get_instance();
+        static $kode = array();
+        if (!$kode && $CI->db->table_exists('master_unit')) {
+            foreach ($CI->db->select('id_unit, kode')->get('master_unit')->result() as $r) {
+                $kode[(int) $r->id_unit] = strtolower((string) $r->kode);
+            }
+        }
+        $id_unit = (int) $id_unit;
+        return isset($kode[$id_unit]) ? $kode[$id_unit] : (string) $id_unit;
+    }
+}
+
+if (!function_exists('unit_siswa_naik_jilid')) {
+    /** Naik jilid TPQ: hanya mengubah jilid, keanggotaan unit tetap utuh. */
+    function unit_siswa_naik_jilid($id_siswa)
+    {
+        $CI =& get_instance();
+        $id_siswa = (int) $id_siswa;
+        if ($id_siswa <= 0 || !$CI->db->table_exists('master_siswa_unit')
+            || !$CI->db->field_exists('jilid', 'master_siswa_unit')) {
+            return false;
+        }
+        $sekarang = unit_siswa_jilid($id_siswa);
+        $angka = 0;
+        if (preg_match('/(\d+)/', $sekarang, $m)) {
+            $angka = (int) $m[1];
+        }
+        $baru = (string) ($angka + 1);
+        $id_tpq = unit_id_tpq();
+
+        $CI->db->where('siswa_id', $id_siswa)
+            ->where('unit_id', $id_tpq)
+            ->update('master_siswa_unit', array('jilid' => $baru));
+        return $CI->db->affected_rows() > 0 ? $baru : false;
+    }
+}

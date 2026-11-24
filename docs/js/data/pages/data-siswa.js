@@ -41,6 +41,8 @@ pageContents['data-siswa'] = {
                     <li><strong>Tanggal Diterima:</strong> Tanggal siswa diterima di sekolah</li>
                     <li><strong>Username:</strong> Username untuk login siswa (wajib unik, minimal 5 karakter)</li>
                     <li><strong>Password:</strong> Password untuk login siswa (minimal 5 karakter)</li>
+                    <li><strong>Unit Murid:</strong> Centang MTs, Madin, dan/atau TPQ. Boleh lebih dari satu (murid dobel tetap satu akun), minimal satu; default MTs</li>
+                    <li><strong>Jilid TPQ:</strong> Isi bila murid terdaftar di TPQ. Tombol <code class="inline">Naik Jilid</code> tersedia di form Edit Siswa</li>
                 </ul>
             </li>
             <li>Klik tombol <code class="inline">Simpan</code></li>
@@ -69,6 +71,8 @@ pageContents['data-siswa'] = {
                 <tr><td>Tempat Lahir</td><td>Kota kelahiran</td><td>Tidak</td></tr>
                 <tr><td>Tanggal Lahir</td><td>Format: YYYY-MM-DD</td><td>Tidak</td></tr>
                 <tr><td>Agama</td><td>Agama siswa</td><td>Tidak</td></tr>
+                <tr><td>Unit</td><td>Dua kolom terakhir: MTs, Madin, TPQ, atau banyak unit dipisah koma (mis. <code class="inline">MTs,Madin</code>). Kosongkan untuk default MTs</td><td>Ya</td></tr>
+                <tr><td>Jilid TPQ</td><td>Kolom terakhir, isi bila Unit memuat TPQ (mis. <code class="inline">1</code>)</td><td>Tidak</td></tr>
                 <tr><td>Kolom lainnya</td><td>Field tambahan (opsional)</td><td>Tidak</td></tr>
             </tbody>
         </table>

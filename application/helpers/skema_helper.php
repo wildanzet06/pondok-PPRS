@@ -58,6 +58,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 unit_id          TINYINT UNSIGNED NOT NULL,
                 id_tp            INT          NOT NULL DEFAULT 0,
                 status           TINYINT(1)   NOT NULL DEFAULT 1,
+                jilid            VARCHAR(20)  DEFAULT NULL,
                 created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uk_siswa_unit_tp (siswa_id, unit_id, id_tp),
@@ -215,7 +216,8 @@ if (!function_exists('skema_tambahan_pastikan')) {
             array('master_kelas',       'unit_id',           'ALTER TABLE master_kelas ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
             array('kelas_siswa',        'unit_id',           'ALTER TABLE kelas_siswa ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1'),
             array('cbt_jenis_tagihan',  'unit_id',           'ALTER TABLE cbt_jenis_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0'),
-            array('cbt_tagihan',        'unit_id',           'ALTER TABLE cbt_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0')
+            array('cbt_tagihan',        'unit_id',           'ALTER TABLE cbt_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0'),
+            array('master_siswa_unit',  'jilid',             'ALTER TABLE master_siswa_unit ADD COLUMN jilid VARCHAR(20) DEFAULT NULL')
         );
 
         foreach ($kolom as $k) {

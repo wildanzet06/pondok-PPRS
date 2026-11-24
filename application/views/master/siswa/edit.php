@@ -242,6 +242,53 @@ if (!file_exists(FCPATH . $siswa->foto)) {
                                         </div>
                                     <?php endif; ?>
                                     <?php endforeach; ?>
+                                    <?php
+                                    $unit_pilih = unit_pilihan();
+                                    $unit_aktif = unit_siswa_unit_ids_by_id($siswa->id_siswa);
+                                    if (!$unit_aktif) {
+                                        $unit_aktif = array(1);
+                                    }
+                                    $jilid_aktif = unit_siswa_jilid($siswa->id_siswa);
+                                    $id_unit_tpq = (int) unit_id_tpq();
+                                    ?>
+                                    <div class="form-group row">
+                                        <div class="col-md-4 mb-sm-0">
+                                            <label class="control-label">Unit Murid</label>
+                                        </div>
+                                        <div class="col-md-8 mb-sm-0">
+                                            <?php foreach ($unit_pilih as $id_unit => $nama_unit): ?>
+                                                <label class="form-check form-check-inline mb-1">
+                                                    <input class="form-check-input unit-siswa-checkbox" type="checkbox"
+                                                           name="unit[]" value="<?= (int) $id_unit ?>"
+                                                           <?= in_array((int) $id_unit, $unit_aktif, true) ? 'checked' : '' ?>>
+                                                    <span class="form-check-label"><?= html_escape($nama_unit) ?></span>
+                                                </label>
+                                            <?php endforeach; ?>
+                                            <small class="form-text text-muted d-block">
+                                                Centang lebih dari satu untuk murid dobel. Perubahan unit otomatis
+                                                menyesuaikan akses dan tagihan SPP.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row" id="baris-jilid-siswa">
+                                        <div class="col-md-4 mb-sm-0">
+                                            <label for="jilid" class="control-label">Jilid TPQ</label>
+                                        </div>
+                                        <div class="col-md-8 mb-sm-0">
+                                            <input value="<?= html_escape($jilid_aktif) ?>" id="jilid" type="text"
+                                                   class="form-control" name="jilid" placeholder="Misal: 1"
+                                                   autocomplete="off">
+                                            <small class="form-text text-muted">
+                                                Kenaikan jilid TPQ bisa juga memakai tombol di bawah.
+                                            </small>
+                                            <?php if (in_array($id_unit_tpq, $unit_aktif, true)): ?>
+                                                <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                                        onclick="naikJilidSiswa()">
+                                                    <i class="fas fa-arrow-up mr-1"></i> Naik Jilid
+                                                </button>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="tab-pane" id="biosiswa">
                                     <?php foreach ($input_bio as $bio) : ?>
@@ -448,8 +495,35 @@ if (!file_exists(FCPATH . $siswa->foto)) {
     var fotoProfile = '';
     var idSiswa = '<?=$siswa->id_siswa?>';
     var src = '<?=$fotoSiswa?>';
+    var idUnitTpq = <?=$id_unit_tpq?>;
+
+    function sinkronJilidSiswa() {
+        var tpqDicentang = $('#siswa input.unit-siswa-checkbox[value="' + idUnitTpq + '"]').is(':checked');
+        $('#baris-jilid-siswa').toggle(tpqDicentang);
+    }
+
+    function naikJilidSiswa() {
+        $.ajax({
+            url: base_url + 'unitsiswa/naik_jilid/' + idSiswa,
+            type: 'POST',
+            dataType: 'JSON',
+            success: function (res) {
+                swal.fire({
+                    title: res && res.status ? 'Sukses' : 'Error',
+                    text: res && res.text ? res.text : 'Jilid TPQ diperbarui.',
+                    icon: res && res.status ? 'success' : 'error'
+                }).then(function () { window.location.reload(); });
+            },
+            error: function () {
+                window.location.reload();
+            }
+        });
+    }
+
     $(document).ready(function () {
         ajaxcsrf();
+        sinkronJilidSiswa();
+        $('#siswa input.unit-siswa-checkbox').on('change', sinkronJilidSiswa);
 
         $('.tahun').datetimepicker({
             icons:
@@ -516,6 +590,13 @@ if (!file_exists(FCPATH . $siswa->foto)) {
         $('form#siswa').on('submit', function (e) {
             e.preventDefault();
             e.stopImmediatePropagation();
+
+            if ($('#siswa input.unit-siswa-checkbox:checked').length === 0) {
+                swal.fire({
+                    title: "Error", text: "Pilih minimal satu unit murid.", icon: "error"
+                });
+                return;
+            }
 
             var btn = $('#submit');
             btn.attr('disabled', 'disabled').text('Wait...');

@@ -194,6 +194,7 @@ CREATE TABLE IF NOT EXISTS master_siswa_unit (
     unit_id          TINYINT UNSIGNED NOT NULL,
     id_tp            INT          NOT NULL DEFAULT 0,
     status           TINYINT(1)   NOT NULL DEFAULT 1,
+    jilid            VARCHAR(20)  DEFAULT NULL,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_siswa_unit_tp (siswa_id, unit_id, id_tp),
@@ -202,6 +203,13 @@ CREATE TABLE IF NOT EXISTS master_siswa_unit (
 
 INSERT IGNORE INTO master_unit (id_unit, kode, nama, aktif) VALUES
     (1, 'mts', 'MTs', 1), (2, 'madin', 'Madin', 1), (3, 'tpq', 'TPQ', 1);
+
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE master_siswa_unit ADD COLUMN jilid VARCHAR(20) DEFAULT NULL',
+    'SELECT ''master_siswa_unit.jilid sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'master_siswa_unit' AND COLUMN_NAME = 'jilid');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @sql = (SELECT IF(COUNT(*) = 0,
     'ALTER TABLE master_kelas ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 1',
@@ -241,6 +249,13 @@ SET @sql = (SELECT IF(COUNT(*) = 0,
     'SELECT ''boleh_cicil sudah ada'' AS info')
     FROM information_schema.COLUMNS
     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cbt_jenis_tagihan' AND COLUMN_NAME = 'boleh_cicil');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = (SELECT IF(COUNT(*) = 0,
+    'ALTER TABLE cbt_jenis_tagihan ADD COLUMN maks_cicilan TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER boleh_cicil',
+    'SELECT ''maks_cicilan sudah ada'' AS info')
+    FROM information_schema.COLUMNS
+    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cbt_jenis_tagihan' AND COLUMN_NAME = 'maks_cicilan');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @sql = (SELECT IF(COUNT(*) = 0,

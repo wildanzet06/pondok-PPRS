@@ -91,16 +91,11 @@ class Unitsiswa extends CI_Controller {
                 $units = array_values(array_unique(array_intersect($units, $valid_unit)));
                 $units = array_values(array_filter($units, function ($u) { return $u > 0; }));
 
-                $this->db->delete('master_siswa_unit', array('siswa_id' => $id_siswa));
-                foreach ($units as $unit_id) {
-                    $this->db->insert('master_siswa_unit', array(
-                        'siswa_id' => $id_siswa,
-                        'unit_id'  => $unit_id,
-                        'id_tp'    => 0,
-                        'status'   => 1
-                    ));
+                if (unit_siswa_simpan($id_siswa, $units)) {
+                    $diubah++;
+                } else {
+                    $sukses = false;
                 }
-                $diubah++;
             }
             $this->db->trans_complete();
             $sukses = $this->db->trans_status() !== false;
@@ -115,5 +110,27 @@ class Unitsiswa extends CI_Controller {
 
         $q = trim((string) $this->input->post('q'));
         redirect('unitsiswa' . ($q !== '' ? '?q=' . urlencode($q) : ''));
+    }
+
+    /**
+     * Kenaikan jilid TPQ. Keanggotaan unit tidak diubah sama sekali,
+     * jadi murid yang juga MTs/Madin tetap mempertahankan unit lain.
+     */
+    public function naik_jilid($id_siswa) {
+        if ($this->input->method() !== 'post') {
+            redirect('unitsiswa');
+            return;
+        }
+        $id_siswa = (int) $id_siswa;
+        $baru = unit_siswa_naik_jilid($id_siswa);
+        $this->output
+            ->set_content_type('application/json')
+            ->set_output(json_encode(array(
+                'status' => $baru !== false,
+                'jilid'  => $baru === false ? null : $baru,
+                'text'   => $baru !== false
+                    ? 'Jilid TPQ dinaikkan ke ' . $baru . '.'
+                    : 'Gagal menaikkan jilid. Pastikan murid terdaftar di unit TPQ.'
+            )));
     }
 }

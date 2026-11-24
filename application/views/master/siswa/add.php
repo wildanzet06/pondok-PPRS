@@ -16,7 +16,8 @@
             <div class="col-lg-12 p-0">
                 <div class="alert alert-default-danger shadow align-content-center" role="alert">
                     <strong>Catatan!</strong> untuk import data dari file excel, silahkan download templatenya terlebih
-                    dahulu.
+                    dahulu. Dua kolom terakhir: <b>Unit</b> (mis. <code>MTs,Madin</code> untuk murid dobel) dan
+                    <b>Jilid TPQ</b>. Kosongkan Unit untuk default MTs.
                 </div>
             </div>
 
