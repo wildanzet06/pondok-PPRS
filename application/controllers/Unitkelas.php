@@ -25,6 +25,29 @@ class Unitkelas extends CI_Controller {
     }
 
     public function index() {
+        $q       = trim((string) $this->input->get('q'));
+        $unit_id = (int) $this->input->get('unit_id');
+        $kelas   = $this->_cari_kelas($q, $unit_id);
+
+        // Pencarian langsung: kolom pencarian mengirim permintaan setiap kali
+        // pengguna berhenti mengetik, dan hanya daftar kelas yang diganti.
+        // Halaman tidak dimuat ulang sehingga fokus di kolom pencarian tetap.
+        if ($this->input->is_ajax_request()) {
+            $this->output
+                ->set_content_type('application/json')
+                ->set_output(json_encode(array(
+                    'html'    => $this->load->view('unitkelas/_rows', array(
+                        'kelas'   => $kelas,
+                        'q'       => $q,
+                        'unit_id' => $unit_id
+                    ), true),
+                    'jumlah'  => count($kelas),
+                    'q'       => $q,
+                    'unit_id' => $unit_id
+                )));
+            return;
+        }
+
         $user = $this->ion_auth->user()->row();
 
         $data = array(
@@ -36,12 +59,22 @@ class Unitkelas extends CI_Controller {
             'tp'         => $this->dashboard->getTahun(),
             'tp_active'  => $this->dashboard->getTahunActive(),
             'smt'        => $this->dashboard->getSemester(),
-            'smt_active' => $this->dashboard->getSemesterActive()
+            'smt_active' => $this->dashboard->getSemesterActive(),
+            'kelas'      => $kelas,
+            'q'          => $q,
+            'unit_id'    => $unit_id,
+            'unit'       => unit_pilihan(true)
         );
 
-        $q       = trim((string) $this->input->get('q'));
-        $unit_id = (int) $this->input->get('unit_id');
+        $this->load->view('_templates/dashboard/_header', $data);
+        $this->load->view('unitkelas/index', $data);
+        $this->load->view('_templates/dashboard/_footer');
+    }
 
+    /**
+     * Daftar kelas sesuai kata kunci (nama/kode kelas) dan unit terpilih.
+     */
+    private function _cari_kelas($q, $unit_id) {
         $this->db->select('id_kelas, kode_kelas, nama_kelas, unit_id, id_tp, id_smt');
         $this->db->from('master_kelas');
         if ($q !== '') {
@@ -53,15 +86,8 @@ class Unitkelas extends CI_Controller {
         if ($unit_id > 0) {
             $this->db->where('unit_id', $unit_id);
         }
-        $data['kelas']   = $this->db->order_by('id_tp', 'DESC')->order_by('id_smt', 'DESC')
-                                   ->order_by('nama_kelas', 'ASC')->limit(300)->get()->result();
-        $data['q']       = $q;
-        $data['unit_id'] = $unit_id;
-        $data['unit']    = unit_pilihan(true);
-
-        $this->load->view('_templates/dashboard/_header', $data);
-        $this->load->view('unitkelas/index', $data);
-        $this->load->view('_templates/dashboard/_footer');
+        return $this->db->order_by('id_tp', 'DESC')->order_by('id_smt', 'DESC')
+                        ->order_by('nama_kelas', 'ASC')->limit(300)->get()->result();
     }
 
     public function simpan() {
