@@ -108,10 +108,10 @@
                         'name': 'Data Umum', 'icon': 'fas fa-server', 'cbt': '1',
                         'submenu': [
                             {'name':"Tahun Pelajaran", 'link':"datatahun", 'icon': 'far fa-calendar-check'},
-                            {'name':"Mata Pelajaran", 'link':"datamapel", 'icon': 'fa fa-book'},
+                            {'name':"Mata Pelajaran", 'link':"datamapel", 'icon': 'fa fa-book', 'tersembunyi': true},
                             {'name':"Siswa", 'link':"datasiswa", 'icon': 'fa fa-users'},
                             {'name':"Kelas / Rombel", 'link':"datakelas", 'icon': 'fa fa-school'},
-                            {'name':"Ekstrakurikuler", 'link':"dataekstra", 'icon': 'fa fa-chess'},
+                            {'name':"Ekstrakurikuler", 'link':"dataekstra", 'icon': 'fa fa-chess', 'tersembunyi': true},
                             {'name':"Guru", 'link':"dataguru", 'icon': 'fa fa-chalkboard-teacher'}
                         ]
                     },
@@ -239,7 +239,9 @@
                         return;
                     }
                     if (menu.submenu) {
-                        var subs = menu.submenu.map(function (item) {
+                        var subs = menu.submenu.filter(function (item) {
+                            return !(item.tersembunyi && !tampilkanTersembunyi);
+                        }).map(function (item) {
                             if (item['link'].indexOf('/') !== -1) {
                                 return item['link'].split('/')[1];
                             } else return item['link'];
@@ -253,6 +255,9 @@
                         htmlMenu += '<p>' + menu.name + '<i class="fas fa-angle-left right"></i></p>';
                         htmlMenu += '</a><ul class="nav nav-treeview">';
                         menu.submenu.forEach(function (sub) {
+                            if (sub.tersembunyi && !tampilkanTersembunyi) {
+                                return;
+                            }
                             var subActive = isSubActive(sub, menu.submenu) ? 'active' : '';
                             htmlMenu += '<li class="nav-item">';
                             htmlMenu += '<a href="' + base_url + sub.link + '" class="nav-link ' + subActive + '">';

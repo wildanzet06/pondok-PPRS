@@ -48,6 +48,8 @@ class Akses_hook {
         // Data E-Learning / Hasil E-Learning
         'kelasjadwal', 'kelasmateri', 'kelasmaterijadwal', 'kelasstatus',
         'kelasabsensiharian', 'kelasabsensibulanan', 'kelasnilai', 'kelascatatan',
+        // Data Umum: mata pelajaran & ekstrakurikuler
+        'datamapel', 'dataekstra',
         // Pengumuman
         'pengumuman',
         // Ujian sekolah beserta halaman pengaturannya

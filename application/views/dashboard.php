@@ -5,7 +5,16 @@
              style="height: 400px; background: url('<?= base_url('assets/img/wall2.png') ?>')">
         <div class="container-fluid pl-0 pr-0 pb-0 pt-4" style="background-color: rgba(255,255,255,0.7)">
             <div class="row m-0">
-                <?php foreach ($info_box as $info) : ?>
+                <?php
+                $infoTampil = $info_box;
+                if (!$tampilkanTersembunyi) {
+                    $infoTampil = array_values(array_filter($info_box, function ($info) {
+                        $url = isset($info->url) ? $info->url : '';
+                        return !in_array($url, array('datamapel', 'dataekstra'), true);
+                    }));
+                }
+                ?>
+                <?php foreach ($infoTampil as $info) : ?>
                     <div class="col-6 col-sm-4 col-xl-2">
                         <div class="shadow small-box bg-<?= $info->box ?>">
                             <div class="inner">
