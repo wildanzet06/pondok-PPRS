@@ -185,6 +185,7 @@ CREATE TABLE IF NOT EXISTS cbt_jenis_tagihan (
     tipe             ENUM('bulanan','sekali') NOT NULL DEFAULT 'sekali',
     nominal_default  INT UNSIGNED NOT NULL DEFAULT 0,
     boleh_cicil      TINYINT(1)   NOT NULL DEFAULT 0,
+    maks_cicilan     TINYINT UNSIGNED NOT NULL DEFAULT 0,
     keterangan       VARCHAR(255) NULL,
     aktif            TINYINT(1)   NOT NULL DEFAULT 1,
     created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,

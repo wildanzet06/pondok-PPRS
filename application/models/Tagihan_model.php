@@ -281,7 +281,7 @@ class Tagihan_model extends CI_Model {
     // "tunggakan" = belum + cicilan (semua yang belum lunas)
     public function list_tagihan($filter = array()) {
         $sql = "SELECT t.*, s.nis, s.nama, s.hp,
-                       j.nama AS jenis_nama, j.kode AS jenis_kode, j.boleh_cicil,
+                       j.nama AS jenis_nama, j.kode AS jenis_kode, j.boleh_cicil, j.maks_cicilan,
                        (SELECT COALESCE(SUM(p.jumlah_bayar), 0)
                           FROM cbt_pembayaran_spp p
                          WHERE p.tagihan_id = t.id AND p.status_pembayaran = 'success') AS terbayar,
@@ -290,7 +290,10 @@ class Tagihan_model extends CI_Model {
                          WHERE p3.tagihan_id = t.id AND p3.status_pembayaran = 'pending'
                            AND p3.metode_pembayaran = 'transfer_manual') AS pending_manual,
                        (SELECT COUNT(*) FROM cbt_pembayaran_spp p2
-                         WHERE p2.tagihan_id = t.id) AS jml_pembayaran
+                         WHERE p2.tagihan_id = t.id) AS jml_pembayaran,
+                        (SELECT COUNT(*) FROM cbt_pembayaran_spp p5
+                          WHERE p5.tagihan_id = t.id
+                            AND p5.status_pembayaran IN ('success','pending')) AS jml_cicilan
                 FROM cbt_tagihan t
                 JOIN cbt_jenis_tagihan j ON j.id = t.jenis_id
                 LEFT JOIN master_siswa s ON s.id_siswa = t.siswa_id
@@ -326,6 +329,8 @@ class Tagihan_model extends CI_Model {
             $r->nominal_bersih = max(0, (int) $r->nominal - (int) $r->diskon);
             $r->terbayar       = (int) $r->terbayar;
             $r->pending_manual = (int) $r->pending_manual;
+            $r->jml_cicilan    = (int) $r->jml_cicilan;
+            $r->maks_cicilan   = (int) $r->maks_cicilan;
             $r->sisa           = max(0, $r->nominal_bersih - $r->terbayar);
             $r->gratis         = ($r->nominal_bersih == 0);
 

@@ -98,6 +98,22 @@ class Pembayaran extends CI_Controller {
     }
 
     /**
+     * Batasi jumlah transaksi cicilan sesuai pengaturan jenis tagihan.
+     * maks_cicilan = 0 berarti tidak dibatasi.
+     */
+    private function _pesan_batas_cicilan($t) {
+        $maks = isset($t->maks_cicilan) ? (int) $t->maks_cicilan : 0;
+        if (empty($t->boleh_cicil) || $maks <= 0) {
+            return null;
+        }
+        $sudah = isset($t->jml_cicilan) ? (int) $t->jml_cicilan : 0;
+        if ($sudah >= $maks) {
+            return 'Tagihan ini sudah mencapai batas ' . $maks . ' kali cicilan.';
+        }
+        return null;
+    }
+
+    /**
      * Validasi pembayaran sebuah tagihan oleh siswa yang sedang login.
      * Mengembalikan array(tagihan, jumlah) jika boleh, atau FALSE (flashdata 'error' terisi).
      */
@@ -122,6 +138,11 @@ class Pembayaran extends CI_Controller {
         }
 
         if ($t->boleh_cicil) {
+            $pesan_batas = $this->_pesan_batas_cicilan($t);
+            if ($pesan_batas !== null) {
+                $this->session->set_flashdata('error', $pesan_batas);
+                return false;
+            }
             $jumlah = (int) preg_replace('/\D/', '', (string) $this->input->post('jumlah_bayar'));
             $min    = min(self::MIN_CICILAN, $maks);
             if ($jumlah < $min || $jumlah > $maks) {
@@ -451,6 +472,10 @@ class Pembayaran extends CI_Controller {
             if ($maks <= 0 || (!$t->boleh_cicil && $pending > 0)) {
                 return $this->_json_out(array('status' => false, 'msg' =>
                     'Pembayaran untuk tagihan ini sedang menunggu verifikasi admin.'));
+            }
+            $pesan_batas = $this->_pesan_batas_cicilan($t);
+            if ($pesan_batas !== null) {
+                return $this->_json_out(array('status' => false, 'msg' => $pesan_batas));
             }
             if (!$t->boleh_cicil) {
                 // Tagihan sekali bayar: nominal mengikuti sisa yang belum dicadangkan.

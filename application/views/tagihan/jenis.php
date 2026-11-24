@@ -84,12 +84,40 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                        value="<?= $e ? html_escape($e->keterangan) : ''; ?>">
                             </div>
 
-                            <div class="form-check mb-2">
-                                <input type="checkbox" name="boleh_cicil" value="1" class="form-check-input" id="boleh_cicil"
-                                       <?= ($e && !empty($e->boleh_cicil)) ? 'checked' : ''; ?>>
-                                <label class="form-check-label" for="boleh_cicil">
-                                    Boleh dicicil <small class="text-muted">(hanya untuk tipe "sekali bayar")</small>
-                                </label>
+                            <div class="form-group mb-2">
+                                <div class="form-check">
+                                    <input type="checkbox" name="boleh_cicil" value="1" class="form-check-input" id="boleh_cicil"
+                                           <?= ($e && !empty($e->boleh_cicil)) ? 'checked' : ''; ?>>
+                                    <label class="form-check-label" for="boleh_cicil">
+                                        Boleh dicicil <small class="text-muted">(hanya untuk tipe "sekali bayar")</small>
+                                    </label>
+                                </div>
+                                <div id="wrap_maks_cicilan" class="mt-2" style="display:none;">
+                                    <label for="maks_cicilan" class="mb-1">Jumlah cicilan maksimal</label>
+                                    <div class="d-flex align-items-center">
+                                        <select name="maks_cicilan" id="maks_cicilan" class="form-control mr-2" style="max-width:170px;">
+                                            <?php
+                                            $maksSimpan = $e ? (int) $e->maks_cicilan : 0;
+                                            $pilihan = array(
+                                                0  => 'Tidak dibatasi',
+                                                2  => '2 kali',
+                                                3  => '3 kali',
+                                                4  => '4 kali',
+                                                5  => '5 kali',
+                                                6  => '6 kali',
+                                                10 => '10 kali',
+                                                12 => '12 kali'
+                                            );
+                                            foreach ($pilihan as $nilai => $label):
+                                                ?>
+                                                <option value="<?= (int) $nilai; ?>" <?= $maksSimpan === (int) $nilai ? 'selected' : ''; ?>>
+                                                    <?= $label; ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <small class="text-muted">maks. transaksi pembayaran</small>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="form-check">
@@ -138,7 +166,16 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                 <?php endif; ?>
                                             </td>
                                             <td><?= $rp($j->nominal_default); ?></td>
-                                            <td><?= !empty($j->boleh_cicil) ? '<span class="badge badge-info">Boleh</span>' : '-'; ?></td>
+                                            <td>
+                                                <?php if (!empty($j->boleh_cicil)): ?>
+                                                    <span class="badge badge-info">Boleh</span>
+                                                    <?php if ((int) $j->maks_cicilan > 0): ?>
+                                                        <br><small class="text-muted">maks. <?= (int) $j->maks_cicilan; ?> kali</small>
+                                                    <?php endif; ?>
+                                                <?php else: ?>
+                                                    -
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <?= $j->aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-light">Nonaktif</span>'; ?>
                                             </td>
@@ -166,3 +203,24 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
         </div>
     </section>
 </div>
+<script>
+    $(function () {
+        var $cicil = $('#boleh_cicil');
+        var $tipe = $('select[name="tipe"]');
+        var $wrap = $('#wrap_maks_cicilan');
+
+        function perbarui() {
+            var bulanan = $tipe.val() === 'bulanan';
+            if (bulanan) {
+                $cicil.prop('checked', false).prop('disabled', true);
+            } else {
+                $cicil.prop('disabled', false);
+            }
+            $wrap.toggle(!bulanan && $cicil.prop('checked'));
+        }
+
+        $cicil.on('change', perbarui);
+        $tipe.on('change', perbarui);
+        perbarui();
+    });
+</script>

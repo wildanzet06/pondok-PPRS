@@ -97,6 +97,8 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                         &nbsp;
                                                     <?php elseif ($maks <= 0 || (!$t->boleh_cicil && $t->pending_manual > 0)): ?>
                                                         <small class="text-muted">menunggu verifikasi</small>
+                                                    <?php elseif ($t->boleh_cicil && (int) $t->maks_cicilan > 0 && (int) $t->jml_cicilan >= (int) $t->maks_cicilan): ?>
+                                                        <small class="text-muted">sudah mencapai batas <?= (int) $t->maks_cicilan; ?> kali cicilan</small>
                                                     <?php else: ?>
                                                         <button type="button" class="btn btn-success btn-sm btn-bayar"
                                                                 data-id="<?= (int) $t->id; ?>"
@@ -104,7 +106,9 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                                 data-sisa="<?= (int) $t->sisa; ?>"
                                                                 data-maks="<?= (int) $maks; ?>"
                                                                 data-min="<?= (int) $min; ?>"
-                                                                data-cicil="<?= $t->boleh_cicil ? 1 : 0; ?>">
+                                                                data-cicil="<?= $t->boleh_cicil ? 1 : 0; ?>"
+                                                                data-maks-cicilan="<?= (int) $t->maks_cicilan; ?>"
+                                                                data-jml-cicilan="<?= (int) $t->jml_cicilan; ?>">
                                                             <i class="fa fa-credit-card"></i> Bayar
                                                         </button>
                                                     <?php endif; ?>
@@ -245,6 +249,8 @@ $(function () {
         var maks = parseInt(b.data('maks'), 10);
         var min  = parseInt(b.data('min'), 10);
         var cicil = parseInt(b.data('cicil'), 10) === 1;
+        var batasCicil = parseInt(b.data('maks-cicilan'), 10) || 0;
+        var jmlCicil = parseInt(b.data('jml-cicilan'), 10) || 0;
 
         $('#f_tagihan').val(b.data('id'));
         $('#f_label').text(b.data('label'));
@@ -252,7 +258,11 @@ $(function () {
 
         if (cicil) {
             $('#f_jumlah').prop('readonly', false).attr({min: min, max: maks});
-            $('#f_info').text('Tagihan ini boleh dicicil: isi antara ' + rupiah(min) + ' dan ' + rupiah(maks) + '.');
+            var info = 'Tagihan ini boleh dicicil: isi antara ' + rupiah(min) + ' dan ' + rupiah(maks) + '.';
+            if (batasCicil > 0) {
+                info += ' Maksimal ' + batasCicil + ' kali (' + jmlCicil + ' kali sudah dibayar).';
+            }
+            $('#f_info').text(info);
         } else {
             $('#f_jumlah').prop('readonly', true);
             $('#f_info').text('Tagihan ini dibayar penuh sebesar ' + rupiah(maks) + '.');

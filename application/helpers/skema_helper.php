@@ -80,6 +80,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 tipe             ENUM('bulanan','sekali') NOT NULL DEFAULT 'sekali',
                 nominal_default  INT UNSIGNED NOT NULL DEFAULT 0,
                 boleh_cicil      TINYINT(1)   NOT NULL DEFAULT 0,
+                maks_cicilan     TINYINT UNSIGNED NOT NULL DEFAULT 0,
                 keterangan       VARCHAR(255) NULL,
                 aktif            TINYINT(1)   NOT NULL DEFAULT 1,
                 created_at       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -185,7 +186,8 @@ if (!function_exists('skema_tambahan_pastikan')) {
             array('cbt_pembayaran_spp', 'diverifikasi_pada', 'ALTER TABLE cbt_pembayaran_spp ADD COLUMN diverifikasi_pada DATETIME DEFAULT NULL'),
             array('cbt_setting_spp',    'instruksi_transfer', 'ALTER TABLE cbt_setting_spp ADD COLUMN instruksi_transfer TEXT NULL'),
             array('cbt_setting_spp',    'kunci_kwitansi',    'ALTER TABLE cbt_setting_spp ADD COLUMN kunci_kwitansi VARCHAR(64) NULL'),
-            array('cbt_jenis_tagihan',  'boleh_cicil',       'ALTER TABLE cbt_jenis_tagihan ADD COLUMN boleh_cicil TINYINT(1) NOT NULL DEFAULT 0')
+            array('cbt_jenis_tagihan',  'boleh_cicil',       'ALTER TABLE cbt_jenis_tagihan ADD COLUMN boleh_cicil TINYINT(1) NOT NULL DEFAULT 0'),
+            array('cbt_jenis_tagihan',  'maks_cicilan',      'ALTER TABLE cbt_jenis_tagihan ADD COLUMN maks_cicilan TINYINT UNSIGNED NOT NULL DEFAULT 0')
         );
 
         foreach ($kolom as $k) {

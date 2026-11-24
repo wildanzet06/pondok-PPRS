@@ -132,6 +132,10 @@ class Tagihan extends CI_Controller {
         $ket     = trim((string) $this->input->post('keterangan'));
         $aktif   = $this->input->post('aktif') ? 1 : 0;
         $cicil   = $this->input->post('boleh_cicil') ? 1 : 0;
+        $maks    = (int) $this->input->post('maks_cicilan');
+        if ($maks < 0 || $maks > 36) {
+            $maks = 0;
+        }
 
         if (!in_array($tipe, array('bulanan', 'sekali'))) {
             $tipe = 'sekali';
@@ -139,6 +143,10 @@ class Tagihan extends CI_Controller {
         // Tagihan bulanan (SPP) tidak dicicil
         if ($tipe == 'bulanan') {
             $cicil = 0;
+        }
+        // Tanpa izin cicilan, batas cicilan tidak relevan
+        if (!$cicil) {
+            $maks = 0;
         }
 
         $balik = 'tagihan/jenis' . ($id ? '?edit=' . $id : '');
@@ -160,6 +168,7 @@ class Tagihan extends CI_Controller {
             'tipe'            => $tipe,
             'nominal_default' => $nominal,
             'boleh_cicil'     => $cicil,
+            'maks_cicilan'    => $maks,
             'keterangan'      => ($ket !== '') ? mb_substr($ket, 0, 255) : null,
             'aktif'           => $aktif
         ), $id);
