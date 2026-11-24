@@ -101,12 +101,20 @@ class Presensi extends CI_Controller {
         $tanggal  = (string) $this->input->get('tanggal');
         $jam      = (int) $this->input->get('jam');
         if (!$this->_tanggal_valid($tanggal)) $tanggal = date('Y-m-d');
-        if ($jam < 1 || $jam > self::MAKS_JAM) $jam = 1;
+
+        // Jumlah jam mengikuti pengaturan jadwal kelas yang dipilih.
+        $maks_jam    = self::MAKS_JAM;
+        $kelas_valid = false;
+        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
+            $kelas_valid = true;
+            $maks_jam    = $this->Presensi_model->jam_maks($kelas_id, $tp->id_tp, $smt->id_smt, self::MAKS_JAM);
+        }
+        if ($jam < 1 || $jam > $maks_jam) $jam = $maks_jam;
 
         $data = $this->_admin_data('Presensi Kelas');
         $data['daftar_kelas']  = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt);
         $data['status_ref']    = $this->Presensi_model->status;
-        $data['maks_jam']      = self::MAKS_JAM;
+        $data['maks_jam']      = $maks_jam;
         $data['mapel_tersedia'] = $this->Presensi_model->mapel_tersedia();
         $data['daftar_mapel']  = $this->Presensi_model->daftar_mapel();
         $data['kelas_id']      = $kelas_id;
@@ -118,7 +126,7 @@ class Presensi extends CI_Controller {
         $data['sesi_hari']     = array();
         $data['nama_kelas']    = '';
 
-        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
+        if ($kelas_valid) {
             $data['roster']     = $this->Presensi_model->roster($kelas_id, $tp->id_tp, $smt->id_smt);
             $data['sesi']       = $this->Presensi_model->get_sesi($kelas_id, $tanggal, $jam);
             $data['tersimpan']  = $data['sesi'] ? $this->Presensi_model->status_sesi($data['sesi']->id) : array();
@@ -156,14 +164,16 @@ class Presensi extends CI_Controller {
             redirect($balik);
             return;
         }
-        if ($jam < 1 || $jam > self::MAKS_JAM) {
-            $this->session->set_flashdata('error', 'Jam pelajaran tidak valid.');
-            redirect($balik);
-            return;
-        }
         if (!$this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
             $this->session->set_flashdata('error', 'Kelas tidak valid.');
             redirect('presensi');
+            return;
+        }
+
+        $maks_jam = $this->Presensi_model->jam_maks($kelas_id, $tp->id_tp, $smt->id_smt, self::MAKS_JAM);
+        if ($jam < 1 || $jam > $maks_jam) {
+            $this->session->set_flashdata('error', 'Jam pelajaran tidak valid untuk kelas ini (maksimal ' . $maks_jam . ').');
+            redirect($balik);
             return;
         }
 

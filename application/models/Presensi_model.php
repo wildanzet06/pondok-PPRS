@@ -78,6 +78,47 @@ class Presensi_model extends CI_Model {
         return $this->db->select('id_mapel, nama_mapel')->order_by('nama_mapel', 'ASC')->get('master_mapel')->result();
     }
 
+    /**
+     * Jumlah jam pelajaran per hari untuk sebuah kelas.
+     * Diambil dari pengaturan jadwal (kelas_jadwal_kbm.kbm_jml_mapel_hari).
+     * Fallback: jam_ke terbesar pada jadwal mapel, lalu $fallback.
+     */
+    public function jam_maks($id_kelas, $id_tp, $id_smt, $fallback = 15) {
+        $fallback = max(1, (int) $fallback);
+        $id_kelas = (int) $id_kelas;
+        if ($id_kelas < 1) return $fallback;
+
+        $kbm = null;
+        if ($this->db->table_exists('kelas_jadwal_kbm')) {
+            $kbm = $this->db->select('kbm_jml_mapel_hari')
+                            ->get_where('kelas_jadwal_kbm', array(
+                                'id_kelas' => $id_kelas,
+                                'id_tp'    => (int) $id_tp,
+                                'id_smt'   => (int) $id_smt
+                            ))
+                            ->row();
+        }
+
+        if ($kbm && (int) $kbm->kbm_jml_mapel_hari > 0) {
+            return min($fallback, (int) $kbm->kbm_jml_mapel_hari);
+        }
+
+        if ($this->db->table_exists('kelas_jadwal_mapel') && $this->db->field_exists('jam_ke', 'kelas_jadwal_mapel')) {
+            $j = $this->db->select_max('jam_ke', 'jam_maks')
+                          ->get_where('kelas_jadwal_mapel', array(
+                              'id_kelas' => $id_kelas,
+                              'id_tp'    => (int) $id_tp,
+                              'id_smt'   => (int) $id_smt
+                          ))
+                          ->row();
+            if ($j && (int) $j->jam_maks > 0) {
+                return min($fallback, (int) $j->jam_maks);
+            }
+        }
+
+        return $fallback;
+    }
+
     public function nama_mapel($id) {
         if (!$this->mapel_tersedia()) return null;
         $r = $this->db->select('nama_mapel')->get_where('master_mapel', array('id_mapel' => (int) $id))->row();
