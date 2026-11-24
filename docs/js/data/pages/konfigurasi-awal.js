@@ -136,7 +136,7 @@ pageContents['konfigurasi-awal'] = {
         <ol class="step-list">
             <li>Login sebagai admin menggunakan akun yang baru dibuat</li>
             <li>Buka <strong>Data Umum → Tahun Pelajaran</strong> — tambah dan aktifkan tahun ajaran berjalan</li>
-            <li>Tambah data <strong>Mata Pelajaran</strong>, <strong>Jurusan</strong>, dan <strong>Kelas</strong></li>
+            <li>Tambah data <strong>Mata Pelajaran</strong> dan <strong>Kelas</strong></li>
             <li>Import atau tambah data <strong>Guru</strong> dan <strong>Siswa</strong></li>
             <li>Buat akun login untuk guru dan siswa via <strong>Pengaturan → Manajemen Pengguna</strong></li>
         </ol>

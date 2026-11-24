@@ -1,48 +1,6 @@
-function load_jurusan() {
-    $('#jurusan').find('option').not(':first').remove();
-
-    $.getJSON(base_url+'jurusan/load_jurusan', function (data) {
-        var option = [];
-        for (let i = 0; i < data.length; i++) {
-            option.push({
-                id: data[i].id_jurusan,
-                text: data[i].nama_jurusan
-            });
-        }
-        $('#jurusan').select2({
-            data: option
-        })
-    });
-}
-
-function load_kelas(id) {
-    $('#kelas').find('option').not(':first').remove();
-
-    $.getJSON(base_url+'kelas/kelas_by_jurusan/' + id, function (data) {
-        var option = [];
-        for (let i = 0; i < data.length; i++) {
-            option.push({
-                id: data[i].id_kelas,
-                text: data[i].nama_kelas
-            });
-        }
-        $('#kelas').select2({
-            data: option
-        });
-    });
-}
-
 $(document).ready(function () {
 
     ajaxcsrf();
-
-    // Load Jurusan
-    load_jurusan();
-
-    // Load Kelas By Jurusan
-    $('#jurusan').on('change', function () {
-        load_kelas($(this).val());
-    });
 
     $('form#mahasiswa input, form#mahasiswa select').on('change', function () {
         $(this).closest('.form-group').removeClass('has-error has-success');

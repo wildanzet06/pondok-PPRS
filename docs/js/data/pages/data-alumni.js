@@ -34,7 +34,6 @@ pageContents['data-alumni'] = {
                     <li><strong>Nama Lengkap:</strong> Nama alumni</li>
                     <li><strong>NISN:</strong> Nomor induk siswa nasional</li>
                     <li><strong>Tahun Lulus:</strong> Tahun kelulusan</li>
-                    <li><strong>Jurusan:</strong> Jurusan saat sekolah</li>
                     <li><strong>Universitas:</strong> Universitas yang dituju</li>
                     <li><strong>No. HP:</strong> Nomor telepon</li>
                     <li><strong>Email:</strong> Alamat email</li>
@@ -88,7 +87,7 @@ pageContents['data-alumni'] = {
         <ol class="step-list">
             <li>Pada halaman Data Alumni, klik tombol <code class="inline">Export</code></li>
             <li>Pilih format export (Excel/CSV)</li>
-            <li>Pilih filter jika diperlukan (tahun lulus, jurusan)</li>
+            <li>Pilih filter jika diperlukan (tahun lulus, universitas)</li>
             <li>Klik tombol <code class="inline">Download</code></li>
             <li>File akan didownload ke komputer</li>
         </ol>
@@ -103,7 +102,6 @@ pageContents['data-alumni'] = {
             <li>Pada halaman Data Alumni, gunakan fitur filter:
                 <ul class="step-list">
                     <li><strong>Tahun Lulus:</strong> Filter berdasarkan tahun kelulusan</li>
-                    <li><strong>Jurusan:</strong> Filter berdasarkan jurusan</li>
                     <li><strong>Universitas:</strong> Filter berdasarkan universitas</li>
                 </ul>
             </li>

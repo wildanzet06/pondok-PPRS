@@ -78,9 +78,8 @@ const menuData = [
                 label: 'Data Umum',
                 children: [
                     { id: 'tahun-ajaran', label: 'Tahun Pelajaran', prev: 'menu-siswa', next: 'mata-pelajaran' },
-                    { id: 'mata-pelajaran', label: 'Mata Pelajaran', prev: 'tahun-ajaran', next: 'jurusan' },
-                    { id: 'jurusan', label: 'Jurusan', prev: 'mata-pelajaran', next: 'kelas-rombel' },
-                    { id: 'kelas-rombel', label: 'Kelas / Rombel', prev: 'jurusan', next: 'data-siswa' },
+                    { id: 'mata-pelajaran', label: 'Mata Pelajaran', prev: 'tahun-ajaran', next: 'kelas-rombel' },
+                    { id: 'kelas-rombel', label: 'Kelas / Rombel', prev: 'mata-pelajaran', next: 'data-siswa' },
                     { id: 'data-siswa', label: 'Siswa', prev: 'kelas-rombel', next: 'ekstrakurikuler' },
                     { id: 'ekstrakurikuler', label: 'Ekstrakurikuler', prev: 'data-siswa', next: 'data-guru' },
                     { id: 'data-guru', label: 'Guru', prev: 'ekstrakurikuler', next: 'buku-induk' },

@@ -46,16 +46,6 @@
                                 <?= $kelas->kode_kelas ?>
                             </td>
                         </tr>
-                        <?php if ($setting->jenjang == '3') : ?>
-                            <tr>
-                                <td>
-                                    Jurusan
-                                </td>
-                                <td>
-                                    <?= $kelas->nama_jurusan ?>
-                                </td>
-                            </tr>
-                        <?php endif; ?>
                         <tr>
                             <td>
                                 Level Kelas

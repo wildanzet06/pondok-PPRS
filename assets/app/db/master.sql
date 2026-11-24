@@ -142,7 +142,6 @@ CREATE TABLE `cbt_bank_soal` (
   `bank_level` varchar(225) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `bank_kelas` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `bank_mapel_id` int DEFAULT NULL,
-  `bank_jurusan_id` int NOT NULL DEFAULT '0',
   `bank_guru_id` int DEFAULT NULL,
   `bank_nama` varchar(250) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `kkm` int DEFAULT '0',
@@ -1025,32 +1024,6 @@ CREATE TABLE `master_hari_efektif` (
 -- --------------------------------------------------------
 
 --
--- Struktur dari tabel `master_jurusan`
---
-
-CREATE TABLE `master_jurusan` (
-  `id_jurusan` int NOT NULL,
-  `nama_jurusan` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
-  `kode_jurusan` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `mapel_peminatan` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci,
-  `status` int NOT NULL DEFAULT '1',
-  `deletable` int NOT NULL DEFAULT '1'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
-
---
--- Dumping data untuk tabel `master_jurusan`
---
-
-INSERT INTO `master_jurusan` (`id_jurusan`, `nama_jurusan`, `kode_jurusan`, `mapel_peminatan`, `status`, `deletable`) VALUES
-(0, 'NON JURUSAN', 'NON', NULL, 1, 0),
-(1, 'IPA', 'IPA', NULL, 1, 0),
-(2, 'IPS', 'IPS', NULL, 1, 0),
-(3, 'BAHASA', 'BAHASA', NULL, 1, 0),
-(4, 'KEAGAMAAN', 'AGAMA', NULL, 0, 1);
-
--- --------------------------------------------------------
-
---
 -- Struktur dari tabel `master_kelas`
 --
 
@@ -1060,7 +1033,6 @@ CREATE TABLE `master_kelas` (
   `id_smt` int NOT NULL,
   `nama_kelas` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL,
   `kode_kelas` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `jurusan_id` int DEFAULT NULL,
   `level_id` int NOT NULL,
   `guru_id` int DEFAULT NULL,
   `siswa_id` int DEFAULT NULL,
@@ -1988,12 +1960,6 @@ ALTER TABLE `master_hari_efektif`
   ADD PRIMARY KEY (`id_hari_efektif`) USING BTREE;
 
 --
--- Indeks untuk tabel `master_jurusan`
---
-ALTER TABLE `master_jurusan`
-  ADD PRIMARY KEY (`id_jurusan`) USING BTREE;
-
---
 -- Indeks untuk tabel `master_kelas`
 --
 ALTER TABLE `master_kelas`
@@ -2335,12 +2301,6 @@ ALTER TABLE `master_guru`
 --
 ALTER TABLE `master_hari_efektif`
   MODIFY `id_hari_efektif` int NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT untuk tabel `master_jurusan`
---
-ALTER TABLE `master_jurusan`
-  MODIFY `id_jurusan` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- AUTO_INCREMENT untuk tabel `master_kelas`

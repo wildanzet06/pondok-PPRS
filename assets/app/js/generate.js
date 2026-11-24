@@ -12,8 +12,10 @@ let forceGenerate = 0;
 let timeOffset;
 
 $(document).ready(function () {
-    // cek token
-    loadTokenFromServer();
+    // cek token (hanya saat fitur ujian terlihat)
+    if (window.tampilkanFiturTersembunyi !== false) {
+        loadTokenFromServer();
+    }
 });
 
 function loadTokenFromServer() {

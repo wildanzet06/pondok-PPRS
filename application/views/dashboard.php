@@ -1,3 +1,4 @@
+<?php $tampilkanTersembunyi = $this->session->userdata('tampilkan_fitur_tersembunyi') === '1'; ?>
 <!-- Content Wrapper. Contains page content -->
 <div class="content-wrapper bg-white dashboard-page">
     <section class="content-header p-0 d-flex align-items-end dashboard-hero"
@@ -27,7 +28,8 @@
     <section class="content mt-4">
         <div class="container-fluid">
             <div class="row">
-                <div class="col-md-4">
+                <div class="col-md-<?= $tampilkanTersembunyi ? '4' : '12' ?>">
+                    <?php if ($tampilkanTersembunyi): ?>
                     <div class="card card-primary my-shadow">
                         <div class="card-header">
                             <div class="card-title">
@@ -133,6 +135,7 @@
                             </div>
                         </div>
                     </div>
+                    <?php endif; ?>
                     <div class="card card-success my-shadow">
                         <div class="card-header">
                             <div class="card-title">Aktifitas</div>
@@ -148,6 +151,7 @@
                         </div>
                     </div>
                 </div>
+                <?php if ($tampilkanTersembunyi): ?>
                 <div class="col-md-8">
                     <div class="card card-danger my-shadow">
                         <div class="card-header">
@@ -274,8 +278,9 @@
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
-            <?php if ($this->ion_auth->is_admin()): ?>
+            <?php if ($this->ion_auth->is_admin() && $tampilkanTersembunyi): ?>
                 <!-- Pemberitahuan ujian buatan guru (PRD 5.1). Dashboard_model tidak diubah;
                      data diambil lewat AJAX ke endpoint modul Ujian Sekolah. -->
                 <div class="row d-none" id="kartu-ujian-guru">

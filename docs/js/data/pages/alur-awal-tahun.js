@@ -56,7 +56,7 @@ pageContents['alur-awal-tahun'] = {
         <ol class="step-list">
             <li>Buka menu <code class="inline">Data Umum > Kelas / Rombel</code>.</li>
             <li>Pada tab <code class="inline">Kelas</code>, klik <code class="inline">Tambah Kelas</code>.</li>
-            <li>Isi detail kelas seperti jenjang, jurusan, dan nama kelas.</li>
+            <li>Isi detail kelas seperti jenjang, level, dan nama kelas.</li>
             <li>Ulangi hingga semua kelas untuk tahun ajaran baru selesai dibuat.</li>
             <li>Lihat panduan detail di halaman <a href="#/kelas-rombel">Kelas / Rombel</a>.</li>
         </ol>

@@ -84,21 +84,6 @@
                                            value="<?= $kelas->kode_kelas ?>" required/>
                                 </div>
                             </div>
-                            <?php if ($setting->jenjang == '3') : ?>
-                                <div class="form-group row">
-                                    <label for="jurusan_id" class="col-md-3 control-label">Jurusan</label>
-                                    <div class="col-md-9">
-                                        <?php
-                                        echo form_dropdown(
-                                            'jurusan_id',
-                                            $jurusan,
-                                            $kelas->jurusan_id,
-                                            'class="select2 form-control" id="jurusan_id" required'
-                                        );
-                                        ?>
-                                    </div>
-                                </div>
-                            <?php endif; ?>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group row">
@@ -213,7 +198,6 @@
     const arrSelSiswa = JSON.parse(JSON.stringify(<?= json_encode($jjs)?>));
     $(document).ready(function () {
         $("#guru_id option:first").attr('disabled', 'disabled');
-        $("#jurusan_id option:first").attr('disabled', 'disabled');
         $("#level_id option:first").attr('disabled', 'disabled');
     });
 </script>

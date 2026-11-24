@@ -39,7 +39,7 @@ pageContents['petunjuk-antarmuka'] = {
             <thead><tr><th>Menu</th><th>Fungsi</th></tr></thead>
             <tbody>
                 <tr><td>Dashboard</td><td>Halaman ringkasan dengan info box, jadwal hari ini, dan widget aktivitas</td></tr>
-                <tr><td>Data Umum</td><td>Tahun Pelajaran, Mata Pelajaran, Jurusan, Kelas, Siswa, Ekstrakurikuler, Guru</td></tr>
+                <tr><td>Data Umum</td><td>Tahun Pelajaran, Mata Pelajaran, Kelas, Siswa, Ekstrakurikuler, Guru</td></tr>
                 <tr><td>Data E-Learning</td><td>Jadwal Pelajaran, Materi, Tugas, Perpustakaan Digital</td></tr>
                 <tr><td>Data Ujian</td><td>Jenis Ujian, Sesi, Ruang, Nomor Peserta, Atur Ruang/Sesi, Bank Soal, Jadwal, Alokasi Waktu, Pengawas, Token</td></tr>
                 <tr><td>Pengumuman</td><td>Kelola dan distribusikan pengumuman</td></tr>

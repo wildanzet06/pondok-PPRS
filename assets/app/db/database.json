@@ -455,13 +455,6 @@
       "primary_key": 0
     },
     {
-      "name": "bank_jurusan_id",
-      "type": "int",
-      "max_length": 11,
-      "default": "0",
-      "primary_key": 0
-    },
-    {
       "name": "bank_guru_id",
       "type": "int",
       "max_length": 11,
@@ -3478,51 +3471,6 @@
       "primary_key": 0
     }
   ],
-  "master_jurusan": [
-    {
-      "name": "id_jurusan",
-      "type": "int",
-      "max_length": 11,
-      "default": null,
-      "primary_key": 1,
-      "auto_increment": true
-    },
-    {
-      "name": "nama_jurusan",
-      "type": "varchar",
-      "max_length": 30,
-      "default": null,
-      "primary_key": 0
-    },
-    {
-      "name": "kode_jurusan",
-      "type": "varchar",
-      "max_length": 10,
-      "default": null,
-      "primary_key": 0
-    },
-    {
-      "name": "mapel_peminatan",
-      "type": "longtext",
-      "max_length": null,
-      "default": null,
-      "primary_key": 0
-    },
-    {
-      "name": "status",
-      "type": "int",
-      "max_length": 11,
-      "default": "1",
-      "primary_key": 0
-    },
-    {
-      "name": "deletable",
-      "type": "int",
-      "max_length": 11,
-      "default": "1",
-      "primary_key": 0
-    }
-  ],
   "master_kelas": [
     {
       "name": "id_kelas",
@@ -3557,13 +3505,6 @@
       "name": "kode_kelas",
       "type": "varchar",
       "max_length": 20,
-      "default": null,
-      "primary_key": 0
-    },
-    {
-      "name": "jurusan_id",
-      "type": "int",
-      "max_length": 11,
       "default": null,
       "primary_key": 0
     },

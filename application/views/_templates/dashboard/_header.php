@@ -231,6 +231,7 @@ if ($__embed || $__dari_hasil) {
     let base_url = '<?=base_url()?>';
     let globalToken;
     let adaJadwalUjian;
+    window.tampilkanFiturTersembunyi = <?= $this->session->userdata('tampilkan_fitur_tersembunyi') === '1' ? 'true' : 'false' ?>;
 </script>
 <script src="<?= base_url() ?>/assets/app/js/generate.js"></script>
 <script type="text/javascript">

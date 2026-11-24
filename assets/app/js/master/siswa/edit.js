@@ -1,24 +1,3 @@
-function load_kelas(id) {
-    $('#kelas').find('option').not(':first').remove();
-
-    $.ajax({
-        url: base_url+'kelas/kelas_by_jurusan/' + id,
-        icon: 'GET',
-        success: function (data) {
-            var option = [];
-            for (let i = 0; i < data.length; i++) {
-                option.push({
-                    id: data[i].id_kelas,
-                    text: data[i].nama_kelas
-                });
-            }
-            $('#kelas').select2({
-                data: option
-            })
-        }
-    });
-}
-
 $(document).ready(function () {
 
     ajaxcsrf();

@@ -80,8 +80,8 @@ $(document).ready(function () {
 	});
 
 	$("#tahun tbody").on("click", "tr .check", function () {
-		var check = $("#jurusan tbody tr .check").length;
-		var checked = $("#jurusan tbody tr .check:checked").length;
+		var check = $("#tahun tbody tr .check").length;
+		var checked = $("#tahun tbody tr .check:checked").length;
 		if (check === checked) {
 			$("#select_all").prop("checked", true);
 		} else {

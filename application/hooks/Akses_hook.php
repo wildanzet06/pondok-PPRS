@@ -17,7 +17,7 @@ class Akses_hook {
     // Controller yang TIDAK boleh dibuka siswa (nama sesuai alamat, huruf kecil)
     private $dilarang_siswa = array(
         // Data umum
-        'datatahun', 'datamapel', 'datajurusan', 'datasiswa', 'datakelas',
+        'datatahun', 'datamapel', 'datasiswa', 'datakelas',
         'dataekstra', 'dataguru', 'dataalumni',
         // E-learning (sisi admin/guru)
         'kelasjadwal', 'kelasmateri', 'kelasmaterijadwal', 'kelasstatus',
@@ -36,6 +36,27 @@ class Akses_hook {
         'pelanggaran',
         // Bacaan/stimulus soal (sisi admin/guru)
         'bacaan'
+    );
+
+    /**
+     * Fitur yang sengaja disembunyikan. Selama tombol "Tampilkan Fitur"
+     * (admin) belum diklik pada sesi ini, controller berikut ditolak walau
+     * dibuka lewat alamat langsung. Tombol toggle sendiri sengaja tidak
+     * masuk daftar agar admin tetap bisa menyalakannya kembali.
+     */
+    private $fitur_tersembunyi = array(
+        // Data E-Learning / Hasil E-Learning
+        'kelasjadwal', 'kelasmateri', 'kelasmaterijadwal', 'kelasstatus',
+        'kelasabsensiharian', 'kelasabsensibulanan', 'kelasnilai', 'kelascatatan',
+        // Pengumuman
+        'pengumuman',
+        // Ujian sekolah beserta halaman pengaturannya
+        'ujiansekolah', 'cbtjenis', 'cbtsesi', 'cbtruang', 'cbtsesisiswa',
+        'cbtnomorpeserta', 'cbtbanksoal', 'cbtjadwal', 'cbtalokasi',
+        'cbtpengawas', 'cbttoken', 'cbtcetak', 'cbtstatus', 'cbtnilai',
+        'cbtanalisis', 'cbtrekap', 'nilaimanual', 'hasilujian', 'bacaan',
+        // Rapor, cetak, dan arsip
+        'rapor', 'bukurapor', 'dataalumni'
     );
 
     // Pengecualian: method yang tetap boleh diakses siswa
@@ -133,6 +154,16 @@ class Akses_hook {
             strtolower((string) $CI->uri->segment(1))
         ));
         $metode = strtolower((string) $CI->router->fetch_method());
+
+        // 0b) Fitur tersembunyi: tolak akses langsung sampai admin mengklik
+        //     tombol "Tampilkan Fitur" (status disimpan per sesi).
+        if ($CI->session->userdata('tampilkan_fitur_tersembunyi') !== '1') {
+            foreach ($nama as $n) {
+                if (in_array($n, $this->fitur_tersembunyi, true)) {
+                    $this->tolak($CI, 'fitur tersembunyi dibuka: ' . $n . '/' . $metode);
+                }
+            }
+        }
 
         // 0) Upload gambar soal: batasi nama file, ukuran, dan jenisnya.
         //    Tanpa ini, $_POST['name'] bisa dipakai untuk menimpa file sistem.

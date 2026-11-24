@@ -67,7 +67,7 @@ pageContents['tentang-panduan'] = {
                 </tr>
                 <tr>
                     <td><i class="fas fa-server" style="margin-right:6px"></i><strong>Administrator</strong></td>
-                    <td>Pengelolaan Data Umum: tahun ajaran, mata pelajaran, jurusan, kelas, siswa, guru, ekstrakurikuler, buku induk</td>
+                    <td>Pengelolaan Data Umum: tahun ajaran, mata pelajaran, kelas, siswa, guru, ekstrakurikuler, buku induk</td>
                 </tr>
                 <tr>
                     <td><i class="fas fa-laptop" style="margin-right:6px"></i><strong>CBT</strong></td>

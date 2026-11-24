@@ -55,8 +55,7 @@ $(document).ready(function () {
                 data: "id_kelas",
                 className: "td-center"
             },
-            {data: "nama_kelas"},
-            {data: "nama_jurusan"}
+            {data: "nama_kelas"}
         ],
         order: [[2, "asc"]],
         rowId: function (a) {
@@ -138,27 +137,6 @@ $(document).ready(function () {
         }
     });
 });
-
-function load_jurusan() {
-    var jurusan = $('select[name="nama_jurusan"]');
-    jurusan.children("option:not(:first)").remove();
-
-    ajaxcsrf(); // get csrf token
-    $.ajax({
-        url: base_url + "jurusan/load_jurusan",
-        type: "GET",
-        success: function (data) {
-            //console.log(data);
-            if (data.length) {
-                var dataJurusan;
-                $.each(data, function (key, val) {
-                    dataJurusan = `<option value="${val.id_jurusan}">${val.nama_jurusan}</option>`;
-                    jurusan.append(dataJurusan);
-                });
-            }
-        }
-    });
-}
 
 function bulk_delete() {
     if ($("#kelas tbody tr .check:checked").length == 0) {

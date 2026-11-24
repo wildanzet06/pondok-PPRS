@@ -44,7 +44,7 @@
             'menu': [
                 {'name': 'Beranda', 'link': 'dashboard', 'icon': 'fas fa-desktop', 'cbt': '1'},
                 {'name': 'Profile', 'link': 'guruview', 'icon': 'fas fa-user', 'cbt': '1'},
-                {'name': 'Pengumuman', 'link': 'pengumuman', 'icon': 'fas fa-bullhorn', 'cbt': '1'},
+                {'name': 'Pengumuman', 'link': 'pengumuman', 'icon': 'fas fa-bullhorn', 'cbt': '1', 'tersembunyi': true},
                 {
                     'name': 'Poin Pelanggaran', 'icon': 'fas fa-exclamation-triangle', 'cbt': '1',
                     'submenu': [
@@ -62,7 +62,7 @@
                     ]
                 },
                 {
-                    'name': 'E-Learning', 'icon': 'fas fa-chalkboard', 'cbt': '0',
+                    'name': 'E-Learning', 'icon': 'fas fa-chalkboard', 'cbt': '0', 'tersembunyi': true,
                     'submenu': [
                         {'name': "Jadwal Pelajaran", 'link': "kelasjadwal", 'icon': 'fa fa-calendar-alt'},
                         {'name': "Materi", 'link': "kelasmateri/materi", 'icon': 'fa fa-pencil-ruler'},
@@ -81,7 +81,7 @@
             ]
         },
         {
-            'header': 'UJIAN SEKOLAH', 'cbt': '1',
+            'header': 'UJIAN SEKOLAH', 'cbt': '1', 'tersembunyi': true,
             'menu': [
                 {'name': 'Daftar Ujian', 'link': 'ujiansekolah', 'icon': 'fas fa-clipboard-list', 'cbt': '1'},
                 {'name': 'Kumpulan Soal', 'link': 'cbtbanksoal', 'icon': 'far fa-folder-open', 'cbt': '1'},
@@ -89,7 +89,7 @@
             ]
         },
         {
-            'header': 'PENILAIAN', 'cbt': '0',
+            'header': 'PENILAIAN', 'cbt': '0', 'tersembunyi': true,
             'menu': [
                 {
                     'name': 'Data Rapor', 'icon': 'fas fa-chart-pie', 'cbt': '0',
@@ -113,7 +113,7 @@
             ]
         },
         {
-            'header': 'CETAK', 'cbt': '0', 'wali': true,
+            'header': 'CETAK', 'cbt': '0', 'wali': true, 'tersembunyi': true,
             'menu': [
                 {'name': 'Rapor PTS', 'link': 'rapor/cetakpts', 'icon': 'fas fa-book', 'cbt': '0'},
                 {'name': 'Rapor Akhir', 'link': 'rapor/cetakakhir', 'icon': 'fas fa-book', 'cbt': '0'},
@@ -122,7 +122,7 @@
             ]
         },
         {
-            'header': 'ARSIP', 'cbt': '0', 'wali': true,
+            'header': 'ARSIP', 'cbt': '0', 'wali': true, 'tersembunyi': true,
             'menu': [
                 {'name': 'Arsip Rapor', 'link': 'bukurapor', 'icon': 'fas fa-university', 'cbt': '0',},
             ]
@@ -132,10 +132,14 @@
 
     const isLogin = localStorage.getItem('garudaCBT.login')
     const isCbtMode = isLogin ? isLogin === '1' : false
+    const tampilkanTersembunyi = <?= $this->session->userdata('tampilkan_fitur_tersembunyi') === '1' ? 'true' : 'false' ?>;
     let htmlMenu = '';
     menus.forEach(function (header) {
         console.log(header)
         if (isCbtMode && header.cbt === '0') {
+            return
+        }
+        if (header.tersembunyi && !tampilkanTersembunyi) {
             return
         }
         if (jabatan !== '4' && header.wali) {
@@ -145,6 +149,9 @@
             htmlMenu += `<li class="nav-header">${header.header}</li>`;
             header.menu.forEach(function (menu) {
                 if (isCbtMode && menu.cbt === '0') {
+                    return
+                }
+                if (menu.tersembunyi && !tampilkanTersembunyi) {
                     return
                 }
                 if (jabatan !== '4' && menu.wali) {

@@ -44,7 +44,6 @@ ______
       * Laporan SPP 
    * Data Umum
       * Tahun Pelajaran
-      * Jurusan
       * Mata Pelajaran
       * Ekstrakurikuler
       * Siswa

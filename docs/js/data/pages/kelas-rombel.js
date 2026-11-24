@@ -6,7 +6,7 @@ pageContents['kelas-rombel'] = {
     html: `
     <div class="content-card">
         <h2><i class="fas fa-school"></i> Pengelolaan Kelas / Rombel</h2>
-        <p>Fitur ini digunakan untuk mengelola data kelas atau rombongan belajar di sekolah. Hanya Administrator yang memiliki akses ke menu ini. Kelas digunakan untuk mengelompokkan siswa berdasarkan tingkat dan jurusan. Setiap kelas dapat memiliki wali kelas dan daftar siswa yang terdaftar.</p>
+        <p>Fitur ini digunakan untuk mengelola data kelas atau rombongan belajar di sekolah. Hanya Administrator yang memiliki akses ke menu ini. Kelas digunakan untuk mengelompokkan siswa berdasarkan tingkat. Setiap kelas dapat memiliki wali kelas dan daftar siswa yang terdaftar.</p>
 
         <div class="screenshot-placeholder">
             <i class="fas fa-image"></i>
@@ -34,7 +34,6 @@ pageContents['kelas-rombel'] = {
                 <ul class="step-list">
                     <li><strong>Nama Kelas:</strong> Nama lengkap kelas (contoh: X IPA 1, XI IPS 2)</li>
                     <li><strong>Kode Kelas:</strong> Kode singkat untuk kelas (contoh: XIPA1, XIIPS2)</li>
-                    <li><strong>Jurusan:</strong> Pilih jurusan untuk kelas ini (opsional, tergantung jenjang sekolah)</li>
                     <li><strong>Level:</strong> Pilih tingkat kelas (contoh: 1 untuk kelas X, 2 untuk kelas XI, dll)</li>
                     <li><strong>Wali Kelas:</strong> Pilih guru yang akan menjadi wali kelas</li>
                     <li><strong>Siswa:</strong> Pilih siswa yang akan dimasukkan ke kelas ini (dapat memilih lebih dari satu)</li>
@@ -46,7 +45,7 @@ pageContents['kelas-rombel'] = {
 
         <div class="info-box tip">
             <i class="fas fa-lightbulb"></i>
-            <div><strong>Tips:</strong> Gunakan nama kelas yang konsisten dengan standar sekolah. Pastikan jurusan dan level sudah dikonfigurasi dengan benar. Siswa yang dipilih akan otomatis terdaftar di kelas tersebut.</div>
+            <div><strong>Tips:</strong> Gunakan nama kelas yang konsisten dengan standar sekolah. Pastikan level sudah dikonfigurasi dengan benar. Siswa yang dipilih akan otomatis terdaftar di kelas tersebut.</div>
         </div>
         <hr>
         <h3>🠊 Menambah Kelas Sekaligus (Bulk Create)</h3>
@@ -77,7 +76,7 @@ pageContents['kelas-rombel'] = {
             <li>Pada tabel Kelas, cari kelas yang ingin diedit</li>
             <li>Klik tombol <code class="inline">Edit</code> (ikon pensil) pada baris kelas tersebut</li>
             <li>Halaman Edit Kelas akan ditampilkan dengan data kelas yang sudah terisi</li>
-            <li>Ubah data sesuai kebutuhan (nama, kode, jurusan, level, wali kelas, atau siswa)</li>
+            <li>Ubah data sesuai kebutuhan (nama, kode, level, wali kelas, atau siswa)</li>
             <li>Klik tombol <code class="inline">Simpan</code></li>
             <li>Data kelas akan diperbarui</li>
         </ol>
@@ -93,7 +92,7 @@ pageContents['kelas-rombel'] = {
             <li>Klik tombol <code class="inline">Detail</code> (ikon mata) pada baris kelas tersebut</li>
             <li>Halaman Detail Kelas akan ditampilkan dengan informasi lengkap:
                 <ul class="step-list">
-                    <li>Informasi kelas (nama, kode, jurusan, level)</li>
+                    <li>Informasi kelas (nama, kode, level)</li>
                     <li>Wali kelas</li>
                     <li>Daftar siswa yang terdaftar</li>
                     <li>Struktur kelas (jika ada)</li>
@@ -200,7 +199,6 @@ pageContents['kelas-rombel'] = {
             <li><strong>Gunakan bulk create:</strong> Untuk membuat banyak kelas sekaligus di awal tahun pelajaran, gunakan fitur "Sekaligus"</li>
             <li><strong>Konsistensi naming:</strong> Gunakan format nama kelas yang konsisten (contoh: X IPA 1, XI IPS 2)</li>
             <li><strong>Wali kelas:</strong> Tetapkan wali kelas untuk setiap kelas untuk memudahkan manajemen</li>
-            <li><strong>Jurusan:</strong> Hubungkan kelas dengan jurusan yang sesuai untuk memudahkan pengelolaan mapel peminatan</li>
             <li><strong>Kenaikan kelas:</strong> Lakukan kenaikan kelas di akhir tahun pelajaran setelah semua nilai selesai diproses</li>
             <li><strong>Copy semester:</strong> Gunakan fitur "Atur Kelas Semester" untuk menyalin kelas dari SMT 1 ke SMT 2</li>
             <li><strong>Backup sebelum hapus:</strong> Selalu backup database sebelum menghapus kelas</li>
@@ -221,13 +219,6 @@ pageContents['kelas-rombel'] = {
             <div class="d-flex flex-column">
                 <strong>Siswa tidak muncul di dropdown:</strong>
                 <span>Pastikan siswa sudah ditambahkan di menu Data Siswa dan terdaftar untuk tahun pelajaran dan semester aktif. Cek juga apakah siswa sudah memiliki kelas sebelumnya.</span>
-            </div>
-        </div>
-        <div class="info-box danger">
-            <i class="fas fa-times-circle"></i>
-            <div class="d-flex flex-column">
-                <strong>Jurusan tidak muncul di dropdown:</strong>
-                <span>Pastikan jurusan sudah dibuat di menu Jurusan. Jika jenjang sekolah tidak menggunakan jurusan, field ini mungkin tidak muncul.</span>
             </div>
         </div>
         <div class="info-box danger">
@@ -309,7 +300,6 @@ pageContents['kelas-rombel'] = {
             <tbody>
                 <tr><td><code>nama_kelas</code></td><td>Ya</td><td>Nama lengkap kelas (contoh: X IPA 1)</td></tr>
                 <tr><td><code>kode_kelas</code></td><td>Ya</td><td>Kode singkat kelas (contoh: XIPA1)</td></tr>
-                <tr><td><code>jurusan_id</code></td><td>Tidak</td><td>ID jurusan dari tabel <code>master_jurusan</code> (opsional)</td></tr>
                 <tr><td><code>level</code></td><td>Ya</td><td>Tingkat kelas (1=X, 2=XI, 3=XII, dst)</td></tr>
                 <tr><td><code>guru_id</code></td><td>Tidak</td><td>ID guru yang menjadi wali kelas</td></tr>
                 <tr><td><code>siswa</code></td><td>Tidak</td><td>Array ID siswa yang akan dimasukkan ke kelas ini</td></tr>
@@ -338,7 +328,6 @@ pageContents['kelas-rombel'] = {
                 <tr><td><code>id_kelas</code></td><td>Ya</td><td>ID kelas yang akan diedit</td></tr>
                 <tr><td><code>nama_kelas</code></td><td>Ya</td><td>Nama lengkap kelas</td></tr>
                 <tr><td><code>kode_kelas</code></td><td>Ya</td><td>Kode singkat kelas</td></tr>
-                <tr><td><code>jurusan_id</code></td><td>Tidak</td><td>ID jurusan (opsional)</td></tr>
                 <tr><td><code>level</code></td><td>Ya</td><td>Tingkat kelas</td></tr>
                 <tr><td><code>guru_id</code></td><td>Tidak</td><td>ID guru wali kelas</td></tr>
                 <tr><td><code>siswa</code></td><td>Tidak</td><td>Array ID siswa (akan replace siswa yang ada)</td></tr>
@@ -368,7 +357,6 @@ pageContents['kelas-rombel'] = {
     "id_kelas": 1,
     "nama_kelas": "X IPA 1",
     "kode_kelas": "XIPA1",
-    "jurusan": "IPA",
     "level": 1,
     "wali_kelas": "Budi Santoso"
   },

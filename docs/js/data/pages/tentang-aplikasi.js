@@ -30,7 +30,7 @@ pageContents['tentang-aplikasi'] = {
                 <tr><td><i class="fas fa-book-open"></i> <strong>E-Learning</strong></td><td>Manajemen pembelajaran online: jadwal pelajaran, distribusi materi, tugas, dan absensi siswa per mata pelajaran</td></tr>
                 <tr><td><i class="fas fa-award"></i> <strong>Rapor</strong></td><td>Pengolahan nilai rapor lengkap dengan KKM, predikat, catatan, dan cetak rapor otomatis</td></tr>
                 <tr><td><i class="fas fa-book"></i> <strong>Buku Induk</strong></td><td>Pencatatan data induk siswa secara lengkap dan terstruktur</td></tr>
-                <tr><td><i class="fas fa-users"></i> <strong>Data Umum</strong></td><td>Kelola data siswa, guru, kelas, mata pelajaran, jurusan, ekstrakurikuler, dan tahun ajaran</td></tr>
+                <tr><td><i class="fas fa-users"></i> <strong>Data Umum</strong></td><td>Kelola data siswa, guru, kelas, mata pelajaran, ekstrakurikuler, dan tahun ajaran</td></tr>
                 <tr><td><i class="fas fa-user-graduate"></i> <strong>Alumni & Kelulusan</strong></td><td>Manajemen data kelulusan dan alumni siswa</td></tr>
                 <tr><td><i class="fas fa-chalkboard-teacher"></i> <strong>Wali Kelas</strong></td><td>Fitur khusus wali kelas: daftar siswa, catatan wali kelas, dan struktur organisasi kelas</td></tr>
                 <tr><td><i class="fas fa-sticky-note"></i> <strong>Catatan Guru</strong></td><td>Pencatatan selama pembelajaran per kelas dan mata pelajaran</td></tr>
@@ -90,7 +90,6 @@ pageContents['tentang-aplikasi'] = {
             <li><strong>Data Guru</strong> — biodata, mata pelajaran ampu, dan wali kelas</li>
             <li><strong>Data Kelas</strong> — manajemen kelas per tahun ajaran dan semester</li>
             <li><strong>Data Mata Pelajaran</strong> — kelola mapel reguler dan gabungan</li>
-            <li><strong>Data Jurusan</strong> — manajemen jurusan/program keahlian</li>
             <li><strong>Ekstrakurikuler</strong> — kelola jenis dan peserta ekstrakurikuler</li>
             <li><strong>Tahun Ajaran</strong> — pengaturan tahun ajaran dan semester aktif</li>
             <li><strong>Alumni &amp; Kelulusan</strong> — data kelulusan dan penelusuran alumni</li>

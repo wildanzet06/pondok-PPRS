@@ -73,9 +73,6 @@
                                 <th height="40" class="text-center align-middle p-0">No.</th>
                                 <th class="align-middle">Nama Kelas</th>
                                 <th class="align-middle">Kode Kelas</th>
-                                <?php if ($setting->jenjang == '3') : ?>
-                                    <td>Jurusan</td>
-                                <?php endif; ?>
                                 <th class="align-middle">Wali Kelas</th>
                                 <th class="align-middle text-center">Jumlah Siswa</th>
                                 <th class="text-center align-middle p-0" style="width: 180px"><span>Aksi</span></th>
@@ -89,9 +86,6 @@
                                     <td class="align-middle text-center"><?= $no ?></td>
                                     <td class="align-middle"><?= $kls->nama_kelas ?></td>
                                     <td class="align-middle"><?= $kls->kode_kelas ?></td>
-                                    <?php if ($setting->jenjang == '3') : ?>
-                                        <td class="align-middle text-center"><?= $kls->nama_jurusan ?></td>
-                                    <?php endif; ?>
                                     <td class="align-middle"><?= $kls->nama_guru ?></td>
                                     <td class="align-middle text-center"><?= $kls->jml_siswa ?></td>
                                     <td class="align-middle text-center">

@@ -75,7 +75,6 @@
 								<tr>
 									<th height="50" width="40" class="align-middle text-center p-0">No.</th>
 									<th class="align-middle text-center p-0">Kelas</th>
-									<th class="align-middle text-center p-0">Jurusan</th>
 									<th class="align-middle text-center p-0">Sesi</th>
 									<th class="align-middle text-center p-0">Set Siswa</th>
 								</tr>
@@ -87,7 +86,6 @@
 									<tr data-id="<?= $k->id_kelas ?>">
 										<td class="align-middle text-center p-0"><?= $no++ ?></td>
 										<td class="align-middle"><?= $k->nama_kelas ?></td>
-										<td class="align-middle"><?= $k->nama_jurusan ?></td>
 										<td data-name="input-sesi">
 											<?php echo form_dropdown(
 												'sesi_id',

@@ -697,7 +697,9 @@ $(document).ready(function(){
 	}
 
 	load_log();
-	getPosts();
+	if (window.tampilkanFiturTersembunyi !== false) {
+		getPosts();
+	}
 	/*
 	$("select").closest("form").on("reset",function(ev){
 		var targetJQForm = $(ev.target);

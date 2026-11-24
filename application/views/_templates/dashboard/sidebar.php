@@ -37,6 +37,17 @@
             </div>
         </div>
 
+        <?php if ($this->ion_auth->is_admin()) : ?>
+            <?php $fitur_tersembunyi_aktif = $this->session->userdata('tampilkan_fitur_tersembunyi') === '1'; ?>
+            <?= form_open('fitur/toggle', array('class' => 'px-3 mb-2')) ?>
+            <button type="submit" class="btn btn-sm btn-block <?= $fitur_tersembunyi_aktif ? 'btn-warning' : 'btn-outline-warning' ?>"
+                    title="Tampilkan atau sembunyikan fitur yang disembunyikan">
+                <i class="fas fa-eye<?= $fitur_tersembunyi_aktif ? '-slash' : '' ?> mr-1"></i>
+                <?= $fitur_tersembunyi_aktif ? 'Sembunyikan Fitur' : 'Tampilkan Fitur' ?>
+            </button>
+            <?= form_close() ?>
+        <?php endif; ?>
+
         <!-- Sidebar Menu -->
         <nav class="mt-2 mb-5">
             <ul class="nav nav-pills nav-sidebar flex-column nav-child-indent"
@@ -98,7 +109,6 @@
                         'submenu': [
                             {'name':"Tahun Pelajaran", 'link':"datatahun", 'icon': 'far fa-calendar-check'},
                             {'name':"Mata Pelajaran", 'link':"datamapel", 'icon': 'fa fa-book'},
-                            {'name':"Jurusan", 'link':"datajurusan", 'icon': 'fa fa-flask'},
                             {'name':"Siswa", 'link':"datasiswa", 'icon': 'fa fa-users'},
                             {'name':"Kelas / Rombel", 'link':"datakelas", 'icon': 'fa fa-school'},
                             {'name':"Ekstrakurikuler", 'link':"dataekstra", 'icon': 'fa fa-chess'},
@@ -106,7 +116,7 @@
                         ]
                     },
                     {
-                        'name': 'Data E-Learning', 'icon': 'fas fa-chalkboard', 'cbt': '0',
+                        'name': 'Data E-Learning', 'icon': 'fas fa-chalkboard', 'cbt': '0', 'tersembunyi': true,
                         'submenu': [
                             {'name': "Jadwal Pelajaran", 'link': "kelasjadwal", 'icon': 'fa fa-calendar-alt'},
                             {'name': "Materi", 'link': "kelasmateri/materi", 'icon': 'fa fa-pencil-ruler'},
@@ -115,12 +125,12 @@
                         ]
                     },
                     {
-                        'name': 'Pengumuman', 'link': 'pengumuman', 'icon': 'fas fa-bullhorn', 'cbt': '1'
+                        'name': 'Pengumuman', 'link': 'pengumuman', 'icon': 'fas fa-bullhorn', 'cbt': '1', 'tersembunyi': true
                     },
                 ]
             },
             {
-                'header': 'UJIAN SEKOLAH', 'cbt': '1',
+                'header': 'UJIAN SEKOLAH', 'cbt': '1', 'tersembunyi': true,
                 'menu': [
                     {'name': 'Daftar Ujian', 'link': 'ujiansekolah', 'icon': 'fas fa-clipboard-list', 'cbt': '1'},
                     {'name': 'Kumpulan Soal', 'link': 'cbtbanksoal', 'icon': 'far fa-folder-open', 'cbt': '1'},
@@ -147,7 +157,7 @@
                         ]
                     },
                     {
-                        'name': 'Hasil E-Learning', 'icon': 'fas fa-microscope', 'cbt': '0',
+                        'name': 'Hasil E-Learning', 'icon': 'fas fa-microscope', 'cbt': '0', 'tersembunyi': true,
                         'submenu': [
                             {'name': 'Nilai Harian', 'link':"kelasstatus", 'icon': 'far fa-clipboard'},
                             {'name': 'Kehadiran Harian', 'link':"kelasabsensiharian", 'icon': 'fa fa-user-check'},
@@ -158,7 +168,7 @@
                 ]
             },
             {
-                'header': 'RAPOR', 'cbt': '1',
+                'header': 'RAPOR', 'cbt': '1', 'tersembunyi': true,
                 'menu': [
                     {'name': 'Setting Rapor', 'link': 'rapor', 'icon': 'fas fa-book', 'cbt': '1'},
                     {'name': 'Kumpulan Nilai Rapor', 'link': 'bukurapor', 'icon': 'fas fa-book', 'cbt': '0'},
@@ -193,6 +203,7 @@
         var isLogin = null;
         try { isLogin = localStorage.getItem('garudaCBT.login'); } catch (e) {}
         var isCbtMode = isLogin ? isLogin === '1' : false;
+        var tampilkanTersembunyi = <?= $this->session->userdata('tampilkan_fitur_tersembunyi') === '1' ? 'true' : 'false' ?>;
         var htmlMenu = '';
 
         // Menentukan submenu aktif.
@@ -215,10 +226,16 @@
             if (isCbtMode && header.cbt === '0') {
                 return;
             }
+            if (header.tersembunyi && !tampilkanTersembunyi) {
+                return;
+            }
             if (header.header) {
                 htmlMenu += '<li class="nav-header">' + header.header + '</li>';
                 header.menu.forEach(function (menu) {
                     if (isCbtMode && menu.cbt === '0') {
+                        return;
+                    }
+                    if (menu.tersembunyi && !tampilkanTersembunyi) {
                         return;
                     }
                     if (menu.submenu) {
