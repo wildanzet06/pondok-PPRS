@@ -1,15 +1,8 @@
 <style>
     .siswa-tools { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
     .siswa-tools .btn { display: inline-flex; align-items: center; gap: .35rem; border-radius: 6px; }
-    .siswa-search { position: relative; max-width: 380px; margin-left: auto; }
-    .search-suggest { position: absolute; top: calc(100% + 2px); left: 0; right: 0; z-index: 1050;
-        background: #fff; border: 1px solid #dee2e6; border-radius: 6px;
-        box-shadow: 0 6px 18px rgba(0,0,0,.12); max-height: 260px; overflow: auto; }
-    .search-suggest .suggest-item { display: block; width: 100%; text-align: left; border: 0;
-        background: none; padding: .5rem .7rem; border-bottom: 1px solid #f1f3f5; font-size: .85rem; }
-    .search-suggest .suggest-item:last-child { border-bottom: 0; }
-    .search-suggest .suggest-item:hover, .search-suggest .suggest-item:focus { background: #f1f5f9; outline: 0; }
-    .search-suggest .suggest-meta { color: #6c757d; font-size: .75rem; }
+    .siswa-search { max-width: 380px; margin-left: auto; }
+    .siswa-search .input-group-text { background: #fff; }
     @media (max-width: 575.98px) {
         .siswa-tools { width: 100%; justify-content: stretch; }
         .siswa-tools .btn { flex: 1 1 30%; justify-content: center; font-size: .78rem; padding: .4rem .3rem; }
@@ -66,9 +59,14 @@
                             </div>
                             <div class="col-sm-12 col-md-6">
                                 <div class="siswa-search">
-                                    <input id="input-search" type="search" class="form-control form-control-sm"
-                                           placeholder="Cari nama / NIS..." autocomplete="off" aria-controls="users">
-                                    <div id="search-suggest" class="search-suggest d-none"></div>
+                                    <div class="input-group input-group-sm">
+                                        <input id="input-search" type="search" class="form-control form-control-sm"
+                                               placeholder="Ketik nama / NIS untuk menyaring..." autocomplete="off"
+                                               aria-label="Cari nama atau NIS siswa">
+                                        <div class="input-group-append d-none" id="search-loading">
+                                            <span class="input-group-text"><i class="fas fa-circle-notch fa-spin"></i></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -346,6 +344,8 @@
     let currentPage = 1;
     let perPage = 10;
     let $pagination, defaultOpts, query, actionBulk;
+    let searchTimer = null;
+    let siswaXhr = null;
     const idUnitTpq = <?= (int) unit_id_tpq() ?>;
 
     function sinkronJilidSiswa() {
@@ -363,6 +363,7 @@
             initiateStartPageClick: false,
             onPageClick: function (event, page) {
                 console.info(page + ' (from options)');
+                clearTimeout(searchTimer);
                 currentPage = page;
                 loadSiswa();
             }
@@ -372,68 +373,41 @@
         $('#users_length').change(function () {
             $('#pager-limit').val($(this).val());
             perPage = $(this).val();
+            clearTimeout(searchTimer);
             currentPage = 1;
             loadSiswa();
         });
 
         $('#users-filter').change(function () {
+            clearTimeout(searchTimer);
             currentPage = 1;
             loadSiswa();
         });
 
-        $('#input-search').on('change keyup', function () {
-            var val = $(this).val();
-            query = val === "" ? null : val;
-        });
-
-        var suggestTimer = null;
-        function hideSuggest() {
-            $('#search-suggest').addClass('d-none').empty();
-        }
-
+        // Pencarian langsung: daftar siswa di bawah ikut menyaring saat mengetik,
+        // tanpa dropdown saran yang menutupi tabel.
         $('#input-search').on('input', function () {
-            var q = $.trim($(this).val());
-            clearTimeout(suggestTimer);
-            if (q.length < 2) { hideSuggest(); return; }
-            suggestTimer = setTimeout(function () {
-                $.ajax({
-                    url: base_url + 'datasiswa/list',
-                    type: 'POST',
-                    dataType: 'json',
-                    data: { search: q, page: 1, limit: 8, filter: $('#users-filter').val() },
-                    success: function (res) {
-                        var $box = $('#search-suggest').empty();
-                        if (!res || !res.lists || res.lists.length === 0) { $box.addClass('d-none'); return; }
-                        $.each(res.lists, function (i, s) {
-                            var $b = $('<button type="button" class="suggest-item">');
-                            $('<div>').append($('<b>').text(s.nama || '-')).appendTo($b);
-                            $('<div class="suggest-meta">').text('NIS ' + (s.nis || '-') + (s.nama_kelas ? ' \u00b7 ' + s.nama_kelas : '')).appendTo($b);
-                            $b.data('nama', s.nama || '');
-                            $box.append($b);
-                        });
-                        $box.removeClass('d-none');
-                    },
-                    error: function () { hideSuggest(); }
-                });
-            }, 250);
+            var val = $.trim($(this).val());
+            query = val === '' ? null : val;
+            currentPage = 1;
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                loadSiswa({ diam: true });
+            }, 300);
         });
 
         $('#input-search').on('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); hideSuggest(); applySearch(); }
-            if (e.key === 'Escape') { hideSuggest(); }
-        });
-
-        $('#search-suggest').on('click', '.suggest-item', function () {
-            var nama = $(this).data('nama') || '';
-            $('#input-search').val(nama);
-            query = nama === '' ? null : nama;
-            currentPage = 1;
-            hideSuggest();
-            loadSiswa();
-        });
-
-        $(document).on('click', function (e) {
-            if (!$(e.target).closest('.siswa-search').length) { hideSuggest(); }
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimer);
+                applySearch();
+            } else if (e.key === 'Escape' && this.value !== '') {
+                this.value = '';
+                query = null;
+                currentPage = 1;
+                clearTimeout(searchTimer);
+                loadSiswa({ diam: true });
+            }
         });
 
         $(".select_all").on("click", function () {
@@ -585,21 +559,29 @@
         loadSiswa();
     });
 
-    function loadSiswa() {
+    function loadSiswa(opsi) {
+        var diam = !!(opsi && opsi.diam);
         $(".select_all").prop("checked", false);
         $('#pager-page').val(currentPage);
-        $('#loading').removeClass('d-none');
-        var cari = query != null ? '&search=' + query : ''
+        if (!diam) {
+            $('#loading').removeClass('d-none');
+        }
+        $('#search-loading').removeClass('d-none');
+        var cari = query != null ? '&search=' + encodeURIComponent(query) : '';
         var filter = '&filter=' + $('#users-filter').val();
         var dataPost = $('#pager').serialize() + cari + filter;
         console.log('post', dataPost);
-        $.ajax({
+        if (siswaXhr) {
+            siswaXhr.abort();
+        }
+        var xhr = siswaXhr = $.ajax({
             url: base_url + 'datasiswa/list',
             data: dataPost,
             type: 'POST',
             success: function (data) {
+                if (xhr !== siswaXhr) { return; }
                 $('#loading').addClass('d-none');
-                $('#input-search').val(data.search);
+                $('#search-loading').addClass('d-none');
                 if (data.pages > 0) {
                     $pagination.removeClass('d-none');
                     $pagination.twbsPagination('destroy');
@@ -611,9 +593,11 @@
                     $pagination.addClass('d-none');
                 }
                 previewData(data);
-            }, error: function (xhr, status, error) {
-                $('#loading').addClass('d-none')
-                console.log("error", xhr.responseText);
+            }, error: function (xhrObj, status) {
+                if (status === 'abort' || xhr !== siswaXhr) { return; }
+                $('#loading').addClass('d-none');
+                $('#search-loading').addClass('d-none');
+                console.log("error", xhrObj.responseText);
                 swal.fire({
                     title: "ERROR",
                     text: "Ada kesalahan",
@@ -625,7 +609,6 @@
 
     function previewData(data) {
         console.log(data);
-        $('#input-search').val(data.search);
         var html = '';
 
         if (data.lists.length > 0) {
@@ -660,7 +643,10 @@
                     '</tr>';
             });
         } else {
-            html += '<tr><td colspan="5" class="text-center align-middle">Tidak ada data siswa</td><tr>';
+            var pesan = data.search
+                ? 'Tidak ada siswa yang cocok dengan &quot;' + $('<div>').text(data.search).html() + '&quot;.'
+                : 'Tidak ada data siswa';
+            html += '<tr><td colspan="5" class="text-center align-middle">' + pesan + '</td></tr>';
         }
         $('#table-body').html(html);
         $(`.avatar`).each(function () {
@@ -675,7 +661,8 @@
     }
 
     function applySearch() {
-        query = $('#input-search').val();
+        var val = $.trim($('#input-search').val());
+        query = val === '' ? null : val;
         currentPage = 1;
         loadSiswa();
     }
