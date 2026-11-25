@@ -44,15 +44,15 @@
                             </div>
                             <div class="col-sm-12 col-md-6">
                                 <div class="dataTables_filter">
-                                    <button id="btn-clear" type="button" class="btn btn-sm btn-light m-0" data-toggle="tooltip" title="hapus pencarian" disabled="disabled">
+                                    <button id="btn-clear" type="button" class="btn btn-sm btn-light m-0" data-toggle="tooltip" title="Hapus pencarian" disabled="disabled">
                                         <i class="fa fa-times"></i>
                                     </button>
                                     <label>
-                                        <input id="input-search" type="search" class="form-control form-control-sm" placeholder="" aria-controls="users">
+                                        <input id="input-search" type="search" class="form-control form-control-sm"
+                                               placeholder="Ketik nama / NIS untuk menyaring..." autocomplete="off"
+                                               aria-label="Cari nama atau NIS siswa" aria-controls="users">
                                     </label>
-                                    <button id="btn-search" type="button" class="btn btn-sm btn-light" data-toggle="tooltip" title="Cari" onclick="applySearch()" disabled="disabled">
-                                        <i class="fa fa-search"></i>
-                                    </button>
+                                    <span id="search-loading" class="d-none ml-1"><i class="fas fa-circle-notch fa-spin"></i></span>
                                 </div>
                             </div>
                         </div>
@@ -102,6 +102,8 @@
     let currentPage = 1;
     let perPage = 10;
     let $pagination, defaultOpts, query;
+    let searchTimer = null;
+    let siswaXhr = null;
 
     $(document).ready(function() {
         ajaxcsrf();
@@ -112,6 +114,7 @@
             initiateStartPageClick: false,
             onPageClick: function (event, page) {
                 console.info(page + ' (from options)');
+                clearTimeout(searchTimer);
                 currentPage = page;
                 loadSiswa();
             }
@@ -121,23 +124,42 @@
         $('#users_length').change(function () {
             $('#pager-limit').val($(this).val());
             perPage = $(this).val();
+            clearTimeout(searchTimer);
             currentPage = 1;
             loadSiswa();
         });
 
-        $('#input-search').on('change keyup', function () {
-            var val = $(this).val();
-            query = val === "" ? null : val;
-            $('#btn-clear').attr('disabled', query == null)
-            $('#btn-search').attr('disabled', query == null)
+        // Pencarian langsung: daftar di bawah ikut menyaring saat mengetik,
+        // tanpa perlu menekan tombol kaca pembesar.
+        $('#input-search').on('input', function () {
+            var val = $.trim($(this).val());
+            query = val === '' ? null : val;
+            $('#btn-clear').prop('disabled', query == null);
+            currentPage = 1;
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(function () {
+                loadSiswa({ diam: true });
+            }, 300);
+        });
+
+        $('#input-search').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                clearTimeout(searchTimer);
+                applySearch();
+            } else if (e.key === 'Escape' && this.value !== '') {
+                $('#btn-clear').trigger('click');
+            }
         });
 
         $('#btn-clear').on('click', function () {
+            clearTimeout(searchTimer);
+            $('#input-search').val('');
             query = null;
             currentPage = 1;
-            $(this).attr('disabled', query == null);
-            $('#btn-search').attr('disabled', query == null);
-            loadSiswa();
+            $(this).prop('disabled', true);
+            $('#input-search').focus();
+            loadSiswa({ diam: true });
         });
 
         $("#users").on("click", ".btn-aktif", function() {
@@ -310,19 +332,27 @@
 
     });
 
-    function loadSiswa() {
+    function loadSiswa(opsi) {
+        var diam = !!(opsi && opsi.diam);
         $('#pager-page').val(currentPage);
-        $('#loading').removeClass('d-none');
-        var cari = query != null ? '&search=' + query : ''
+        if (!diam) {
+            $('#loading').removeClass('d-none');
+        }
+        $('#search-loading').removeClass('d-none');
+        var cari = query != null ? '&search=' + encodeURIComponent(query) : '';
         var dataPost = $('#pager').serialize() + cari;
         console.log('post', dataPost);
-        $.ajax({
+        if (siswaXhr) {
+            siswaXhr.abort();
+        }
+        var xhr = siswaXhr = $.ajax({
             url: base_url + 'usersiswa/list',
             data: dataPost,
             type: 'POST',
             success: function (data) {
+                if (xhr !== siswaXhr) { return; }
                 $('#loading').addClass('d-none');
-                $('#input-search').val(data.search);
+                $('#search-loading').addClass('d-none');
                 if (data.pages > 0) {
                     $pagination.removeClass('d-none');
                     $pagination.twbsPagination('destroy');
@@ -334,9 +364,11 @@
                     $pagination.addClass('d-none');
                 }
                 previewData(data);
-            }, error: function (xhr, status, error) {
-                $('#loading').addClass('d-none')
-                console.log("error", xhr.responseText);
+            }, error: function (xhrObj, status) {
+                if (status === 'abort' || xhr !== siswaXhr) { return; }
+                $('#loading').addClass('d-none');
+                $('#search-loading').addClass('d-none');
+                console.log("error", xhrObj.responseText);
                 swal.fire({
                     title: "ERROR",
                     text: "Ada kesalahan",
@@ -348,7 +380,6 @@
 
     function previewData(data) {
         console.log(data);
-        $('#input-search').val(data.search);
         var html = '';
         if (data.lists.length > 0) {
             $.each(data.lists, function (idx, siswa) {
@@ -382,7 +413,10 @@
             html +=`</td></tr>`;
             });
         } else {
-            html += '<tr><td colspan="7" class="text-center align-middle">Tidak ada data siswa</td><tr>';
+            var pesan = data.search
+                ? 'Tidak ada siswa yang cocok dengan &quot;' + $('<div>').text(data.search).html() + '&quot;.'
+                : 'Tidak ada data siswa';
+            html += '<tr><td colspan="8" class="text-center align-middle">' + pesan + '</td></tr>';
         }
 
         $('#table-body').html(html);
@@ -446,7 +480,9 @@
     });
 
     function applySearch() {
-        query = $('#input-search').val();
+        var val = $.trim($('#input-search').val());
+        query = val === '' ? null : val;
+        $('#btn-clear').prop('disabled', query == null);
         currentPage = 1;
         loadSiswa();
     }
