@@ -165,7 +165,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                                        data-max-file-size-preview="2M"
                                        data-allowed-file-extensions="jpg jpeg png"
                                        data-default-file="<?= base_url() . $setting->logo_kiri ?>"/>
-                                <small class="text-muted">Setelah memilih file, klik <b>Simpan</b> agar logo baru tersimpan.</small>
+                                <small class="text-muted">Logo langsung tersimpan setelah dipilih. Jika tampilan belum berubah, refresh halaman.</small>
                             </div>
                             <?= form_close() ?>
                         </div>
@@ -194,6 +194,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
     var satuanPend = JSON.parse(JSON.stringify(<?= json_encode($satuan)?>));
     var csrfName = '<?= $this->security->get_csrf_token_name() ?>';
     var csrfHash = '<?= $this->security->get_csrf_hash() ?>';
+    var uploadPending = 0;
 
     function submitSetting() {
         $('#savesetting').submit();
@@ -225,7 +226,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
         });
 
         drEvent.on('dropify.afterClear', function (event, element) {
-            deleteImage($(event.currentTarget).data('default-file'));
+            hapusLogo(element.element.id);
             if (element.element.id === 'logo-kanan') {
                 logoKanan = '';
                 $('#prev-logo-kanan').attr('src', '');
@@ -338,7 +339,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                 reader.readAsDataURL(input.files[0]);
 
                 var form = new FormData($('#set-logo-kanan')[0]);
-                uploadAttach(base_url + 'settings/uploadfile/logo_kanan', form);
+                uploadAttach(base_url + 'settings/upload_logo/logo_kanan', form);
             }
         });
 
@@ -352,7 +353,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                 reader.readAsDataURL(input.files[0]);
 
                 var form = new FormData($('#set-logo-kiri')[0]);
-                uploadAttach(base_url + 'settings/uploadfile/logo_kiri', form);
+                uploadAttach(base_url + 'settings/upload_logo/logo_kiri', form);
             }
         });
 
@@ -368,7 +369,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                 reader.readAsDataURL(input.files[0]);
 
                 var form = new FormData($('#set-tandatangan')[0]);
-                uploadAttach(base_url + 'settings/uploadfile/tandatangan', form);
+                uploadAttach(base_url + 'settings/upload_logo/tandatangan', form);
             }
         });
 
@@ -377,6 +378,10 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
             if (data instanceof FormData) {
                 data.append(csrfName, csrfHash);
             }
+
+            uploadPending++;
+            $('#savesetting button[type="submit"]').prop('disabled', true);
+
             $.ajax({
                 type: "POST",
                 enctype: 'multipart/form-data',
@@ -386,17 +391,31 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                 contentType: false,
                 cache: false,
                 timeout: 600000,
-                success: function (data) {
-                    if (data.src.includes('kanan')) {
-                        logoKanan = data.src;
-                        //console.log('kanan', data.src);
-                    } else if (data.src.includes('kiri')) {
-                        logoKiri = data.src;
-                        //console.log('kiri', data.src);
-                    } else if (data.src.includes('tanda')) {
-                        tandatangan = data.src;
-                        //console.log('tandatangan', data.src);
+                success: function (res) {
+                    if (!res || res.status !== true) {
+                        $.toast({
+                            heading: "Gagal",
+                            text: (res && res.error) ? res.error : "Logo gagal disimpan.",
+                            icon: 'error',
+                            hideAfter: 5000,
+                            position: 'top-right'
+                        });
+                        return;
                     }
+                    if (res.src.includes('kanan')) {
+                        logoKanan = res.src;
+                    } else if (res.src.includes('kiri')) {
+                        logoKiri = res.src;
+                    } else if (res.src.includes('tanda')) {
+                        tandatangan = res.src;
+                    }
+                    $.toast({
+                        heading: "Tersimpan",
+                        text: "Logo/tanda tangan langsung tersimpan. Cukup refresh halaman.",
+                        icon: 'success',
+                        hideAfter: 3000,
+                        position: 'top-right'
+                    });
                 },
                 error: function (e) {
                     console.log("error", e.responseText);
@@ -409,6 +428,32 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                         hideAfter: 5000,
                         position: 'top-right'
                     });
+                },
+                complete: function () {
+                    uploadPending = Math.max(0, uploadPending - 1);
+                    if (!uploadPending) {
+                        $('#savesetting button[type="submit"]').prop('disabled', false);
+                    }
+                }
+            });
+        }
+
+        function hapusLogo(id) {
+            var jenis = id === 'logo-kanan' ? 'logo_kanan'
+                : (id === 'logo-kiri' ? 'logo_kiri' : 'tandatangan');
+            var token = {};
+            token[csrfName] = csrfHash;
+            $.ajax({
+                data: token,
+                type: "POST",
+                url: base_url + 'settings/hapus_logo/' + jenis,
+                success: function (res) {
+                    if (res && res.status !== true) {
+                        console.log(res.error || 'Gagal menghapus logo');
+                    }
+                },
+                error: function (e) {
+                    console.log("error", e.responseText);
                 }
             });
         }
