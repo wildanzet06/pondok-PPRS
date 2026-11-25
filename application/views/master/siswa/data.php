@@ -1,14 +1,46 @@
 <style>
     .siswa-tools { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: flex-end; }
-    .siswa-tools .btn { display: inline-flex; align-items: center; gap: .35rem; border-radius: 6px; }
+    .card-header .card-tools.siswa-tools > * { margin: 0; }
+    .siswa-tools .btn { display: inline-flex; align-items: center; justify-content: center; gap: .35rem; border-radius: 6px; white-space: nowrap; }
+
+    .siswa-atas { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: .4rem; }
+    .siswa-atas .dataTables_length,
+    .siswa-atas .dataTables_length label { margin: 0; }
+    .siswa-atas .siswa-search { flex: 1 1 240px; max-width: 380px; margin-left: auto; }
+
+    .siswa-filterbar { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .75rem; margin-bottom: .6rem; }
+    .siswa-filterbar > .dropdown { flex: 0 0 auto; }
+    .siswa-filterbar > .dropdown + .siswa-filter { margin-left: auto; }
+    .siswa-filter { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+    .siswa-filter > label { margin: 0; white-space: nowrap; font-size: .875rem; color: #495057; }
+    .siswa-filter > .form-control { flex: 1 1 auto; width: auto; min-width: 7.5rem; }
+    #baris-jilid { display: none; }
+    #baris-jilid.tpq { display: flex; }
+    #atur-jilid { flex: 0 0 auto; white-space: nowrap; }
+
     .siswa-search { max-width: 380px; margin-left: auto; }
     .siswa-search .input-group-text { background: #fff; }
+
     @media (max-width: 575.98px) {
-        .siswa-tools { width: 100%; justify-content: stretch; }
-        .siswa-tools .btn { flex: 1 1 30%; justify-content: center; font-size: .78rem; padding: .4rem .3rem; }
-        .siswa-search { width: 100%; max-width: none; margin-left: 0; }
+        .card-header .card-tools.siswa-tools {
+            float: none;
+            clear: both;
+            width: 100%;
+            margin-top: 0;
+            padding-top: .45rem;
+            justify-content: space-between;
+        }
+        .card-header .card-tools.siswa-tools > .btn {
+            flex: 1 1 0;
+            min-width: 0;
+            white-space: nowrap;
+            padding: .4rem .3rem;
+            font-size: .78rem;
+        }
+        .siswa-atas .siswa-search { flex: 1 1 100%; max-width: none; margin-left: 0; }
+        #baris-jilid { flex: 1 1 100%; }
         .dataTables_filter { text-align: left !important; }
-        .dataTables_length { margin-bottom: .5rem; }
+        .dataTables_length { margin-bottom: 0; }
     }
     .jilid-group td {
         background: #e9ecef;
@@ -18,8 +50,6 @@
         border-top: 1px solid #dee2e6;
     }
     .jilid-group:first-child td { border-top: 0; }
-    #baris-jilid { display: none; align-items: center; }
-    #baris-jilid.tpq { display: flex; }
 </style><div class="content-wrapper bg-white pt-4">
     <section class="content-header">
         <div class="container-fluid">
@@ -38,13 +68,15 @@
                     <h6 class="card-title">Daftar Siswa</h6>
                     <div class="card-tools siswa-tools">
                         <button type="button" data-toggle="modal" data-target="#createSiswaModal"
-                                class="btn btn-sm btn-primary">
-                            <i class="fas fa-plus"></i><span>Tambah Siswa</span>
+                                class="btn btn-sm btn-primary" title="Tambah siswa">
+                            <i class="fas fa-plus"></i><span>Tambah</span>
                         </button>
-                        <a href="<?= base_url('datasiswa/add') ?>" class="btn btn-sm btn-success">
+                        <a href="<?= base_url('datasiswa/add') ?>" class="btn btn-sm btn-success"
+                           title="Import data siswa">
                             <i class="fas fa-upload"></i><span>Import</span></a>
-                        <a href="<?= base_url('datasiswa/update') ?>" class="btn btn-sm btn-success">
-                            <i class="fas fa-database"></i><span>Update Data</span></a>
+                        <a href="<?= base_url('datasiswa/update') ?>" class="btn btn-sm btn-success"
+                           title="Update data siswa">
+                            <i class="fas fa-database"></i><span>Update</span></a>
                     </div>
                 </div>
                 <div class="card-body">
@@ -76,68 +108,66 @@
                         </li>
                     </ul>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
-                        <div class="row">
-                            <div class="col-sm-12 col-md-6">
-                                <div class="dataTables_length">
-                                    <label>Show
-                                        <select id="users_length" aria-controls="users" class="custom-select custom-select-sm form-control form-control-sm">
-                                            <option value="10">10</option>
-                                            <option value="25">25</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                        </select>
-                                    </label>
-                                </div>
+                        <div class="siswa-atas">
+                            <div class="dataTables_length">
+                                <label>Show
+                                    <select id="users_length" aria-controls="users" class="custom-select custom-select-sm form-control form-control-sm">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                </label>
                             </div>
-                            <div class="col-sm-12 col-md-6">
-                                <div class="siswa-search">
-                                    <div class="input-group input-group-sm">
-                                        <input id="input-search" type="search" class="form-control form-control-sm"
-                                               placeholder="Ketik nama / NIS untuk menyaring..." autocomplete="off"
-                                               aria-label="Cari nama atau NIS siswa">
-                                        <div class="input-group-append d-none" id="search-loading">
-                                            <span class="input-group-text"><i class="fas fa-circle-notch fa-spin"></i></span>
-                                        </div>
+                            <div class="siswa-search">
+                                <div class="input-group input-group-sm">
+                                    <input id="input-search" type="search" class="form-control form-control-sm"
+                                           placeholder="Ketik nama / NIS untuk menyaring..." autocomplete="off"
+                                           aria-label="Cari nama atau NIS siswa">
+                                    <div class="input-group-append d-none" id="search-loading">
+                                        <span class="input-group-text"><i class="fas fa-circle-notch fa-spin"></i></span>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-12 mb-2 d-flex flex-wrap align-items-center justify-content-between">
-                                <!--
-                                <button id="hapusterpilih" onclick="bulk_delete()" type="button" class="btn btn-danger" data-toggle="tooltip" title="Hapus Terpilh" disabled="disabled">
-                                    <i class="far fa-trash-alt"></i>
-                                </button>
-                                -->
-                                <div class="dropdown">
-                                    <button id="dropdown-btn" class="btn btn-danger dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false" disabled="disabled">
-                                        Aksi
+                            <div class="col-12">
+                                <div class="siswa-filterbar">
+                                    <!--
+                                    <button id="hapusterpilih" onclick="bulk_delete()" type="button" class="btn btn-danger" data-toggle="tooltip" title="Hapus Terpilh" disabled="disabled">
+                                        <i class="far fa-trash-alt"></i>
                                     </button>
-                                    <div id="dropdown-action" class="dropdown-menu">
-                                        <a class="dropdown-item" id="pindah" href="#">Set sebagai PINDAH</a>
-                                        <a class="dropdown-item" id="keluar" href="#">Set sebagai KELUAR</a>
-                                        <a class="dropdown-item" id="hapus" href="#">HAPUS</a>
+                                    -->
+                                    <div class="dropdown">
+                                        <button id="dropdown-btn" class="btn btn-sm btn-danger dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false" disabled="disabled">
+                                            Aksi
+                                        </button>
+                                        <div id="dropdown-action" class="dropdown-menu">
+                                            <a class="dropdown-item" id="pindah" href="#">Set sebagai PINDAH</a>
+                                            <a class="dropdown-item" id="keluar" href="#">Set sebagai KELUAR</a>
+                                            <a class="dropdown-item" id="hapus" href="#">HAPUS</a>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="d-flex flex-row align-items-center">
-                                    <span>Filter </span>
-                                    <select id="users-filter" class="ml-2 form-control form-control-sm">
-                                        <option value="1">Aktif</option>
-                                        <option value="5">Tanpa Kelas</option>
-                                        <option value="3">Pindah</option>
-                                        <option value="4">Keluar</option>
-                                    </select>
-                                </div>
-                                <div class="align-items-center" id="baris-jilid">
-                                    <span>Jilid </span>
-                                    <select id="jilid-filter" class="ml-2 form-control form-control-sm">
-                                        <option value="">Semua Jilid</option>
-                                    </select>
-                                    <button type="button" id="atur-jilid"
-                                            class="btn btn-sm btn-outline-primary ml-2"
-                                            title="Atur nama jilid TPQ">
-                                        <i class="fas fa-cog mr-1"></i>setting
-                                    </button>
+                                    <div class="siswa-filter">
+                                        <label for="users-filter">Filter</label>
+                                        <select id="users-filter" class="form-control form-control-sm">
+                                            <option value="1">Aktif</option>
+                                            <option value="5">Tanpa Kelas</option>
+                                            <option value="3">Pindah</option>
+                                            <option value="4">Keluar</option>
+                                        </select>
+                                    </div>
+                                    <div class="siswa-filter" id="baris-jilid">
+                                        <label for="jilid-filter">Jilid</label>
+                                        <select id="jilid-filter" class="form-control form-control-sm">
+                                            <option value="">Semua Jilid</option>
+                                        </select>
+                                        <button type="button" id="atur-jilid"
+                                                class="btn btn-sm btn-outline-primary"
+                                                title="Atur nama jilid TPQ">
+                                            <i class="fas fa-cog"></i><span class="ml-1">setting</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-12 mb-3">
