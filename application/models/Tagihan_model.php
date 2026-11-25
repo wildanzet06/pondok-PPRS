@@ -344,7 +344,10 @@ class Tagihan_model extends CI_Model {
             $bind[] = (int) $filter['jenis_id'];
         }
         if (!empty($filter['unit_id'])) {
-            $sql .= " AND t.unit_id = ?";
+            // unit_id = 0 berarti tagihan berlaku untuk semua unit, jadi tetap
+            // ikut tampil bila dipilih unit tertentu. Tagihan lama yang dibuat
+            // sebelum jenisnya diberi unit juga ikut (unit_id = 0).
+            $sql .= " AND (t.unit_id = ? OR t.unit_id = 0)";
             $bind[] = (int) $filter['unit_id'];
         }
         if (!empty($filter['bulan'])) {

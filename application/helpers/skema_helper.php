@@ -251,6 +251,12 @@ if (!function_exists('skema_tambahan_pastikan')) {
         $db->query("INSERT IGNORE INTO master_unit (id_unit, kode, nama, aktif) VALUES
                     (1, 'mts', 'MTs', 1), (2, 'madin', 'Madin', 1), (3, 'tpq', 'TPQ', 1)");
 
+        // Tagihan lama dibuat sebelum jenisnya diberi unit, sehingga unit_id-nya
+        // masih 0 dan tidak muncul saat daftar tagihan difilter per unit.
+        $db->query("UPDATE cbt_tagihan t JOIN cbt_jenis_tagihan j ON j.id = t.jenis_id
+                       SET t.unit_id = j.unit_id
+                     WHERE t.unit_id = 0 AND j.unit_id > 0");
+
         // Isi awal (sama seperti docs/database_gabungan.sql), hanya bila kosong.
         $db->query("INSERT INTO cbt_setting_poin (sp1, sp2, sp3)
                     SELECT 25, 50, 75 FROM DUAL
