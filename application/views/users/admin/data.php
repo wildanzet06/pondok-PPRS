@@ -52,7 +52,7 @@
     </section>
 </div>
 
-<?= form_open('create', array('id' => 'create')) ?>
+<?= form_open('useradmin/create', array('id' => 'create')) ?>
 <div class="modal fade" id="createAdminModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel"
      aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -64,6 +64,7 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div id="create-errors" class="alert alert-danger d-none mb-3"></div>
                 <?php
                 echo '<div class="form-group row">';
                 echo form_label('First name:', 'first_name', array('class' => 'col-md-4 col-form-label'));

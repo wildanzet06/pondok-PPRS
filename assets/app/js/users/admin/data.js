@@ -152,7 +152,7 @@ $(document).ready(function() {
 	$('#create').on('submit', function (e) {
 		e.preventDefault();
 		e.stopImmediatePropagation();
-		console.log("data:", $(this).serialize());
+		$('#create-errors').addClass('d-none').html('');
 
 		$.ajax({
 			url: base_url + "useradmin/create",
@@ -160,7 +160,24 @@ $(document).ready(function() {
 			dataType: "JSON",
 			data: $(this).serialize(),
 			success: function (data) {
-				//console.log("result", jQuery.parseJSON(data));
+				// Server mengirim status:false dengan HTTP 200 saat validasi gagal.
+				// Jangan tampilkan toast sukses pada kondisi itu.
+				if (!data || data.status !== true) {
+					var pesan = (data && data.msg) ? data.msg : '';
+					var rincian = [];
+					$.each((data && data.errors) || {}, function (_, teks) {
+						if (teks) rincian.push(teks);
+					});
+					if (!pesan && rincian.length) pesan = rincian[0];
+					if (!pesan) pesan = 'Data gagal disimpan.';
+					$('#create-errors')
+						.html(rincian.length ? rincian.join('<br>') : pesan)
+						.removeClass('d-none');
+					showDangerToast(pesan);
+					return;
+				}
+				$('#create')[0].reset();
+				$('#create-errors').addClass('d-none').html('');
 				$('#createAdminModal').modal('hide').data('bs.modal', null);
 				$('#createAdminModal').on('hidden', function () {
 					$(this).data('modal', null);  // destroys modal
