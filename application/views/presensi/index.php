@@ -11,7 +11,7 @@ $tab_url = function ($tab) use ($query_dasar, $kelas_id, $kelas_unit) {
         $q['kelas'] = $kelas_id;
     }
     $q['unit'] = $tab;
-    return site_url('presensi') . '?' . http_build_query($q);
+    return site_url('presensi?' . http_build_query($q));
 };
 
 $unit_id_key = array(
