@@ -100,6 +100,75 @@ if (!function_exists('unit_siswa_akses_penuh')) {
     }
 }
 
+if (!function_exists('unit_id_mts')) {
+    /** Id unit MTs dari tabel master_unit (fallback 1 untuk data lama). */
+    function unit_id_mts()
+    {
+        $CI =& get_instance();
+        static $id = null;
+        if ($id === null) {
+            $id = 1;
+            if ($CI->db->table_exists('master_unit')) {
+                $row = $CI->db->select('id_unit')->where('kode', 'mts')->get('master_unit')->row();
+                if ($row) {
+                    $id = (int) $row->id_unit;
+                }
+            }
+        }
+        return $id;
+    }
+}
+
+if (!function_exists('siswa_ids_unit_mts')) {
+    /**
+     * Saring id siswa untuk kelas MTs.
+     *
+     * Murid yang hanya terdaftar di Madin/TPQ tidak boleh masuk ke kelas MTs.
+     * Murid dengan dua keanggotaan (mis. MTs,Madin) tetap boleh masuk kelas MTs.
+     * Data lama yang belum punya baris master_siswa_unit dianggap MTs.
+     *
+     * @param array $ids Daftar id_siswa
+     * @return array
+     */
+    function siswa_ids_unit_mts($ids)
+    {
+        $CI =& get_instance();
+        if (!is_array($ids)) {
+            return array();
+        }
+
+        $bersih = array();
+        foreach ($ids as $id) {
+            $id = (int) $id;
+            if ($id > 0) {
+                $bersih[$id] = $id;
+            }
+        }
+        if (!$bersih || !$CI->db->table_exists('master_siswa_unit')) {
+            return array_values($bersih);
+        }
+
+        $anggota = array();
+        $baris = $CI->db->select('siswa_id, unit_id')
+            ->where_in('siswa_id', $bersih)
+            ->where('status', 1)
+            ->get('master_siswa_unit')->result();
+        foreach ($baris as $r) {
+            $anggota[(int) $r->siswa_id][] = (int) $r->unit_id;
+        }
+
+        $mts = (int) unit_id_mts();
+        $hasil = array();
+        foreach ($bersih as $id) {
+            $unit = isset($anggota[$id]) ? $anggota[$id] : array();
+            if (!$unit || in_array($mts, $unit, true)) {
+                $hasil[] = $id;
+            }
+        }
+        return $hasil;
+    }
+}
+
 if (!function_exists('unit_id_tpq')) {
     /** Id unit TPQ dari tabel master_unit (fallback 3 untuk data lama). */
     function unit_id_tpq()
