@@ -16,7 +16,7 @@
     .siswa-filter > .form-control { flex: 1 1 auto; width: auto; min-width: 7.5rem; }
     #baris-jilid, #baris-kelas { display: none; }
     #baris-jilid.tpq, #baris-kelas.mts, #baris-kelas.madin { display: flex; }
-    #atur-jilid, #atur-kelas { flex: 0 0 auto; white-space: nowrap; }
+    #atur-jilid, #atur-kelas, #naik-kelas-massal { flex: 0 0 auto; white-space: nowrap; }
 
     .siswa-search { max-width: 380px; margin-left: auto; }
     .siswa-search .input-group-text { background: #fff; }
@@ -87,7 +87,8 @@
                         kelas yang dipilih di form, lalu otomatis dikelompokkan di halaman ini.
                         Tab <b>MTs</b> dan <b>Madin</b> memakai filter <b>Kelas</b> dan tombol
                         <b>setting</b> untuk mengubah nama/urutan kelas (Madin: Putra 1-3, Putri 1-3).
-                        Tab <b>TPQ</b> memakai filter <b>Jilid</b> dan setting nama jilid.
+                        Tab <b>MTs</b> juga punya tombol <b>Naik Kelas</b> untuk memindahkan banyak siswa
+                        sekaligus ke kelas berikutnya. Tab <b>TPQ</b> memakai filter <b>Jilid</b> dan setting nama jilid.
                     </div>
                     <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
@@ -179,6 +180,11 @@
                                                 class="btn btn-sm btn-outline-primary"
                                                 title="Atur nama dan urutan kelas">
                                             <i class="fas fa-cog"></i><span class="ml-1">setting</span>
+                                        </button>
+                                        <button type="button" id="naik-kelas-massal"
+                                                class="btn btn-sm btn-outline-success d-none"
+                                                title="Naikkan kelas siswa MTs secara massal">
+                                            <i class="fas fa-arrow-up"></i><span class="ml-1">Naik Kelas</span>
                                         </button>
                                     </div>
                                 </div>
@@ -560,6 +566,58 @@
     </div>
 </div>
 
+<div class="modal fade" id="naikKelasModal" tabindex="-1" role="dialog" aria-labelledby="naikKelasModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="naikKelasModalLabel">Naik Kelas Massal (MTs)</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border small mb-3">
+                    Siswa dipindahkan hanya di unit <b>MTs</b>; kelas Madin dan jilid TPQ tidak berubah.
+                    Mode <b>otomatis</b> mengikuti urutan pada tombol setting kelas dan akan membuat
+                    kelas berikutnya bila kodenya berupa angka (misal <code>7</code> ke <code>8</code>).
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-5 mb-2">
+                        <label for="naik-dari">Kelas asal</label>
+                        <select id="naik-dari" class="form-control form-control-sm"></select>
+                    </div>
+                    <div class="form-group col-md-5 mb-2">
+                        <label for="naik-tujuan">Kelas tujuan</label>
+                        <select id="naik-tujuan" class="form-control form-control-sm"></select>
+                    </div>
+                    <div class="form-group col-md-2 mb-2 d-flex align-items-end">
+                        <button type="button" id="naik-hitung" class="btn btn-sm btn-secondary btn-block">
+                            <i class="fas fa-sync mr-1"></i>Hitung
+                        </button>
+                    </div>
+                </div>
+                <div class="custom-control custom-checkbox mb-3">
+                    <input type="checkbox" class="custom-control-input" id="naik-hanya-terpilih">
+                    <label class="custom-control-label" for="naik-hanya-terpilih">
+                        Hanya siswa yang dicentang <span id="naik-jumlah-terpilih" class="text-muted"></span>
+                    </label>
+                </div>
+                <div id="naik-hasil" class="mb-2">
+                    <span class="text-muted">Pilih kelas asal dan tujuan, lalu klik Hitung.</span>
+                </div>
+                <div id="naik-catatan" class="alert alert-warning small mb-0 d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                <button type="button" id="naik-jalankan" class="btn btn-success" disabled>
+                    <i class="fas fa-arrow-up mr-1"></i>Naikkan Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= form_open('', array('id' => 'pager')); ?>
 <input type="hidden" id="pager-page" name="page" value="1">
 <input type="hidden" id="pager-limit" name="limit" value="10">
@@ -579,6 +637,7 @@
     let kelasAktif = '';
     let kelasDaftar = [];
     let kelasDihapus = [];
+    let naikRencana = null;
     const idUnitTpq = <?= (int) unit_id_tpq() ?>;
     const idUnitMts = <?= (int) unit_id_mts() ?>;
     const idUnitMadin = <?= (int) unit_id_madin() ?>;
@@ -602,6 +661,7 @@
         muatKelas(unitAktif, '');
         sinkronJilidSiswa();
         sinkronKelasSiswa();
+        $('#naik-kelas-massal').toggleClass('d-none', unitAktif !== 'mts');
         $('#formsiswa input.unit-siswa-checkbox').on('change', function () {
             sinkronJilidSiswa();
             sinkronKelasSiswa();
@@ -619,6 +679,7 @@
             $('#baris-jilid').toggleClass('tpq', unitAktif === 'tpq');
             $('#baris-kelas').toggleClass('mts', unitAktif === 'mts')
                 .toggleClass('madin', unitAktif === 'madin');
+            $('#naik-kelas-massal').toggleClass('d-none', unitAktif !== 'mts');
             if (unitAktif === 'tpq') {
                 muatJilid(jilidAktif);
             } else {
@@ -785,6 +846,77 @@
             }).fail(function () {
                 tombol.prop('disabled', false);
                 swal.fire({title: 'ERROR', text: 'Gagal menyimpan kelas.', icon: 'error'});
+            });
+        });
+
+        $('#naik-kelas-massal').on('click', function () {
+            if (unitAktif !== 'mts') {
+                return;
+            }
+            muatKelas('mts').done(function () {
+                isiPilihanNaikKelas();
+                $('#naikKelasModal').modal('show');
+                hitungNaikKelas();
+            });
+        });
+
+        $('#naik-dari, #naik-tujuan').on('change', hitungNaikKelas);
+        $('#naik-hitung').on('click', hitungNaikKelas);
+        $('#naik-hanya-terpilih').on('change', function () {
+            var jumlah = $('#table-siswa tbody tr .check:checked').length;
+            $('#naik-jumlah-terpilih').text(jumlah ? '(' + jumlah + ')' : '');
+            hitungNaikKelas();
+        });
+
+        $('#naik-jalankan').on('click', function () {
+            if (!naikRencana || !naikRencana.jumlah) {
+                return;
+            }
+            var tombol = $(this).prop('disabled', true);
+            var daftar = naikRencana.ringkasan || [];
+            var rincian = $.map(daftar, function (item) {
+                return item.dari_nama + ' → ' + item.tujuan_nama + ' (' + item.jumlah + ' siswa)';
+            }).join('\n');
+            swal.fire({
+                title: 'Yakin?',
+                text: 'Siswa berikut akan dinaikkan kelas:\n' + rincian,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, naikkan!',
+                cancelButtonText: 'Batal'
+            }).then(function (result) {
+                if (!result.value) {
+                    tombol.prop('disabled', false);
+                    return;
+                }
+                var data = dataNaikKelas(false);
+                if (!data) {
+                    tombol.prop('disabled', false);
+                    swal.fire({title: 'Error', text: 'Tidak ada siswa terpilih.', icon: 'error'});
+                    return;
+                }
+                $.post(base_url + 'datasiswa/naik_kelas_massal', data).done(function (res) {
+                    tombol.prop('disabled', false);
+                    if (!res.status) {
+                        swal.fire({title: 'Gagal', text: res.text || 'Gagal menyimpan.', icon: 'error'});
+                        return;
+                    }
+                    $('#naikKelasModal').modal('hide');
+                    $(".select_all, .check").prop('checked', false);
+                    $('#hapusterpilih, #dropdown-btn').attr('disabled', 'disabled');
+                    muatKelas('mts', kelasAktif);
+                    loadSiswa();
+                    swal.fire({
+                        title: 'Berhasil',
+                        text: res.text,
+                        icon: 'success',
+                        timer: 1800,
+                        showConfirmButton: false
+                    });
+                }).fail(function () {
+                    tombol.prop('disabled', false);
+                    swal.fire({title: 'ERROR', text: 'Gagal menghubungi server.', icon: 'error'});
+                });
             });
         });
 
@@ -1081,6 +1213,123 @@
             $('#kelas-filter').html(html).val(saat);
             if ($('#kelas-filter').val() === null) $('#kelas-filter').val('');
             renderTabelKelas();
+        });
+    }
+
+    function isiPilihanNaikKelas() {
+        var dariLama = $('#naik-dari').val();
+        var tujuanLama = $('#naik-tujuan').val() || 'auto';
+        var htmlDari = '<option value="__semua">Semua kelas</option>' +
+            '<option value="__tanpa">Tanpa Kelas</option>';
+        var htmlTujuan = '<option value="auto">Naik otomatis ke kelas berikutnya</option>';
+        $.each(kelasDaftar, function (_, item) {
+            htmlDari += '<option value="' + escAttr(item.kode) + '">' + esc(item.nama) + '</option>';
+            htmlTujuan += '<option value="' + escAttr(item.kode) + '">' + esc(item.nama) + '</option>';
+        });
+        $('#naik-dari').html(htmlDari);
+        $('#naik-tujuan').html(htmlTujuan);
+
+        var pilihDari = dariLama || '';
+        if (pilihDari === '') {
+            $.each(kelasDaftar, function (_, item) {
+                if (item.kode === kelasAktif) {
+                    pilihDari = item.kode;
+                }
+            });
+        }
+        if (pilihDari === '') {
+            pilihDari = '__semua';
+        }
+        if ($('#naik-dari option[value="' + pilihDari + '"]').length === 0) {
+            pilihDari = '__semua';
+        }
+        $('#naik-dari').val(pilihDari);
+        if ($('#naik-tujuan option[value="' + tujuanLama + '"]').length === 0) {
+            tujuanLama = 'auto';
+        }
+        $('#naik-tujuan').val(tujuanLama);
+
+        var terpilih = $('#table-siswa tbody tr .check:checked').length;
+        $('#naik-jumlah-terpilih').text(terpilih ? '(' + terpilih + ')' : '');
+        $('#naik-hanya-terpilih').prop('checked', terpilih > 0);
+    }
+
+    function dataNaikKelas(pratinjau) {
+        var hanya = $('#naik-hanya-terpilih').is(':checked');
+        var terpilih = [];
+        if (hanya) {
+            $('#table-siswa tbody tr .check:checked').each(function () {
+                terpilih.push($(this).val());
+            });
+            if (!terpilih.length) {
+                return null;
+            }
+        }
+        var data = {
+            dari: $('#naik-dari').val() || '__semua',
+            tujuan: $('#naik-tujuan').val() || 'auto',
+            pratinjau: pratinjau ? '1' : '0',
+            hanya_terpilih: hanya ? '1' : '0'
+        };
+        if (terpilih.length) {
+            data['terpilih[]'] = terpilih;
+        }
+        return data;
+    }
+
+    function tampilkanRencanaNaik(res) {
+        naikRencana = res;
+        $('#naik-jalankan').prop('disabled', !res.jumlah);
+        var html = '';
+        if (res.jumlah > 0 && res.ringkasan && res.ringkasan.length) {
+            html = '<div class="list-group">';
+            $.each(res.ringkasan, function (_, item) {
+                html += '<div class="list-group-item d-flex justify-content-between align-items-center">' +
+                    '<span>' + esc(item.dari_nama) +
+                    ' <i class="fas fa-arrow-right mx-2"></i> ' + esc(item.tujuan_nama) +
+                    (item.baru ? ' <span class="badge badge-info">kelas baru</span>' : '') +
+                    '</span><span class="badge badge-primary badge-pill">' + item.jumlah + ' siswa</span></div>';
+            });
+            html += '</div>';
+        } else {
+            html = '<div class="alert alert-info mb-0">' +
+                esc(res.text || 'Tidak ada siswa yang cocok.') + '</div>';
+        }
+        $('#naik-hasil').html(html);
+        var catatan = res.catatan || [];
+        $('#naik-catatan').toggleClass('d-none', catatan.length === 0)
+            .html(catatan.length ? esc(catatan.join(' ')) : '');
+    }
+
+    function hitungNaikKelas() {
+        var data = dataNaikKelas(true);
+        if (!data) {
+            naikRencana = null;
+            $('#naik-jalankan').prop('disabled', true);
+            $('#naik-hasil').html('<div class="alert alert-warning mb-0">' +
+                'Centang siswa dulu atau matikan pilihan "hanya siswa yang dicentang".</div>');
+            $('#naik-catatan').addClass('d-none');
+            return;
+        }
+        var tombol = $('#naik-hitung').prop('disabled', true);
+        $('#naik-jalankan').prop('disabled', true);
+        $('#naik-hasil').html('<span class="text-muted">' +
+            '<i class="fas fa-circle-notch fa-spin mr-1"></i>Menghitung...</span>');
+        $.post(base_url + 'datasiswa/naik_kelas_massal', data).done(function (res) {
+            tombol.prop('disabled', false);
+            if (!res.status) {
+                naikRencana = null;
+                $('#naik-hasil').html('<div class="alert alert-danger mb-0">' +
+                    esc(res.text || 'Gagal menghitung.') + '</div>');
+                $('#naik-catatan').addClass('d-none');
+                return;
+            }
+            tampilkanRencanaNaik(res);
+        }).fail(function () {
+            tombol.prop('disabled', false);
+            naikRencana = null;
+            $('#naik-jalankan').prop('disabled', true);
+            $('#naik-hasil').html('<div class="alert alert-danger mb-0">Gagal menghubungi server.</div>');
         });
     }
 

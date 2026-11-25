@@ -17,7 +17,7 @@ class Akses_hook {
     // Controller yang TIDAK boleh dibuka siswa (nama sesuai alamat, huruf kecil)
     private $dilarang_siswa = array(
         // Data umum
-        'datatahun', 'datamapel', 'datasiswa', 'datakelas', 'unitsiswa', 'unitkelas',
+        'datatahun', 'datamapel', 'datasiswa', 'datakelas', 'unitsiswa',
         'dataekstra', 'dataguru', 'dataalumni',
         // E-learning (sisi admin/guru)
         'kelasjadwal', 'kelasmateri', 'kelasmaterijadwal', 'kelasstatus',
@@ -78,7 +78,7 @@ class Akses_hook {
      * Datasiswa: tambah/ubah/hapus siswa + ubah username/password siswa.
      * Bukuinduk: buku induk siswa (halaman admin, tidak ada di menu guru).
      */
-    private $khusus_admin_semua = array('datasiswa', 'bukuinduk', 'usersiswa', 'unitsiswa', 'unitkelas');
+    private $khusus_admin_semua = array('datasiswa', 'bukuinduk', 'usersiswa', 'unitsiswa');
 
     /**
      * Pengecualian dari aturan "controller khusus admin" di atas:
