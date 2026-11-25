@@ -346,6 +346,20 @@ if (!function_exists('unit_kode')) {
     }
 }
 
+if (!function_exists('unit_ikon')) {
+    /** Ikon Font Awesome untuk kode unit (mts/madin/tpq), dipakai di tab unit. */
+    function unit_ikon($kode)
+    {
+        $peta = array(
+            'mts'   => 'fa-school',
+            'madin' => 'fa-book-open',
+            'tpq'   => 'fa-quran'
+        );
+        $kode = strtolower(trim((string) $kode));
+        return isset($peta[$kode]) ? $peta[$kode] : 'fa-users';
+    }
+}
+
 if (!function_exists('unit_siswa_naik_jilid')) {
     /** Naik jilid TPQ: hanya mengubah jilid, keanggotaan unit tetap utuh. */
     function unit_siswa_naik_jilid($id_siswa)

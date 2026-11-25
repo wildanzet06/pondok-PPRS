@@ -979,3 +979,86 @@ input[type="search"]::-webkit-search-results-button,
 input[type="search"]::-webkit-search-results-decoration {
 	-webkit-appearance:none;
 }
+
+/* ------------------------------------------------------------------
+   Tab unit MTs / Madin / TPQ.
+   Tiap unit punya warna sendiri supaya mudah dibedakan saat berpindah
+   halaman (Data Siswa, Daftar Tagihan). Tab aktif tampil solid.
+   ------------------------------------------------------------------ */
+.nav-tabs.unit-tabs {
+	border-bottom: 0;
+	gap: .35rem;
+	flex-wrap: wrap;
+}
+
+.nav-tabs.unit-tabs .nav-item {
+	margin-bottom: 0;
+}
+
+.nav-tabs.unit-tabs .nav-link {
+	display: inline-flex;
+	align-items: center;
+	gap: .4rem;
+	padding: .42rem .95rem;
+	border: 1px solid var(--unit-border, #ced4da);
+	border-radius: .5rem;
+	background: var(--unit-soft, #f8f9fa);
+	color: var(--unit-color, #495057);
+	font-weight: 600;
+	line-height: 1.2;
+	transition: background-color .15s ease, border-color .15s ease,
+		color .15s ease, box-shadow .15s ease;
+}
+
+.nav-tabs.unit-tabs .nav-link i {
+	font-size: .9em;
+	opacity: .9;
+}
+
+.nav-tabs.unit-tabs .nav-link:hover,
+.nav-tabs.unit-tabs .nav-link:focus {
+	background: var(--unit-soft-hover, #e9ecef);
+	border-color: var(--unit-color, #6c757d);
+	color: var(--unit-color, #212529);
+}
+
+.nav-tabs.unit-tabs .nav-link.active,
+.nav-tabs.unit-tabs .nav-link.active:hover,
+.nav-tabs.unit-tabs .nav-link.active:focus {
+	background: var(--unit-color, #2f6fbd);
+	border-color: var(--unit-color, #2f6fbd);
+	color: #fff;
+	box-shadow: 0 2px 8px rgba(15, 23, 42, .18);
+}
+
+.nav-tabs.unit-tabs .nav-link.active i {
+	opacity: 1;
+}
+
+.unit-tab-mts {
+	--unit-color: #2f6fbd;
+	--unit-soft: rgba(47, 111, 189, .10);
+	--unit-soft-hover: rgba(47, 111, 189, .20);
+	--unit-border: rgba(47, 111, 189, .35);
+}
+
+.unit-tab-madin {
+	--unit-color: #177a4c;
+	--unit-soft: rgba(23, 122, 76, .10);
+	--unit-soft-hover: rgba(23, 122, 76, .20);
+	--unit-border: rgba(23, 122, 76, .35);
+}
+
+.unit-tab-tpq {
+	--unit-color: #b45309;
+	--unit-soft: rgba(180, 83, 9, .10);
+	--unit-soft-hover: rgba(180, 83, 9, .20);
+	--unit-border: rgba(180, 83, 9, .35);
+}
+
+@media (max-width: 575.98px) {
+	.nav-tabs.unit-tabs .nav-link {
+		padding: .4rem .7rem;
+		font-size: .85rem;
+	}
+}

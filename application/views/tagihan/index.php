@@ -62,12 +62,25 @@ $qs_filter = http_build_query(array_filter($filter));
                 }
             }
             ?>
-            <ul class="nav nav-tabs mb-3" id="tagihanUnitTabs">
+            <ul class="nav nav-tabs unit-tabs mb-3" id="tagihanUnitTabs">
+                <?php
+                $kode_unit_tab = array(
+                    (int) unit_id_mts()   => 'mts',
+                    (int) unit_id_madin() => 'madin',
+                    (int) unit_id_tpq()   => 'tpq'
+                );
+                ?>
                 <?php foreach ($unit_tab as $id_unit => $nama_unit): ?>
-                    <?php $qs_tab = http_build_query($tab_qs + array('unit_id' => $id_unit)); ?>
+                    <?php
+                    $kode_tab = isset($kode_unit_tab[(int) $id_unit]) ? $kode_unit_tab[(int) $id_unit] : '';
+                    $aktif_tab = ((int) $unit_aktif === (int) $id_unit);
+                    $qs_tab = http_build_query($tab_qs + array('unit_id' => $id_unit));
+                    ?>
                     <li class="nav-item">
-                        <a class="nav-link <?= ((int) $unit_aktif === (int) $id_unit) ? 'active' : ''; ?>"
-                           href="<?= site_url('tagihan?' . $qs_tab); ?>">
+                        <a class="nav-link <?= $kode_tab !== '' ? 'unit-tab-' . $kode_tab : ''; ?> <?= $aktif_tab ? 'active' : ''; ?>"
+                           href="<?= site_url('tagihan?' . $qs_tab); ?>"
+                           <?= $aktif_tab ? 'aria-current="page"' : ''; ?>>
+                            <i class="fas <?= html_escape(unit_ikon($kode_tab)); ?>"></i>
                             <?= html_escape($nama_unit); ?>
                         </a>
                     </li>

@@ -43,15 +43,24 @@
                         Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
                         tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa.
                     </div>
-                    <ul class="nav nav-tabs mb-3" id="siswaUnitTabs" role="tablist">
+                    <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
-                            <a class="nav-link active" href="#" data-unit="mts" role="tab">MTs</a>
+                            <a class="nav-link unit-tab-mts active" href="#" data-unit="mts" role="tab"
+                               aria-selected="true">
+                                <i class="fas <?= unit_ikon('mts'); ?>"></i> MTs
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" data-unit="madin" role="tab">Madin</a>
+                            <a class="nav-link unit-tab-madin" href="#" data-unit="madin" role="tab"
+                               aria-selected="false">
+                                <i class="fas <?= unit_ikon('madin'); ?>"></i> Madin
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#" data-unit="tpq" role="tab">TPQ</a>
+                            <a class="nav-link unit-tab-tpq" href="#" data-unit="tpq" role="tab"
+                               aria-selected="false">
+                                <i class="fas <?= unit_ikon('tpq'); ?>"></i> TPQ
+                            </a>
                         </li>
                     </ul>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
@@ -375,8 +384,8 @@
         $('#siswaUnitTabs a').on('click', function (e) {
             e.preventDefault();
             unitAktif = $(this).data('unit') || 'mts';
-            $('#siswaUnitTabs a').removeClass('active');
-            $(this).addClass('active');
+            $('#siswaUnitTabs a').removeClass('active').attr('aria-selected', 'false');
+            $(this).addClass('active').attr('aria-selected', 'true');
             $('#users-filter option[value="5"]').toggle(unitAktif === 'mts');
             if (unitAktif !== 'mts' && $('#users-filter').val() === '5') {
                 $('#users-filter').val('1');
