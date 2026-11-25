@@ -121,16 +121,6 @@
                     </ul>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="siswa-atas">
-                            <div class="dataTables_length">
-                                <label>Show
-                                    <select id="users_length" aria-controls="users" class="custom-select custom-select-sm form-control form-control-sm">
-                                        <option value="10">10</option>
-                                        <option value="25">25</option>
-                                        <option value="50">50</option>
-                                        <option value="100">100</option>
-                                    </select>
-                                </label>
-                            </div>
                             <div class="siswa-search">
                                 <div class="input-group input-group-sm">
                                     <input id="input-search" type="search" class="form-control form-control-sm"
@@ -222,11 +212,6 @@
                                     </table>
                                 </div>
                                 <?= form_close() ?>
-                            </div>
-                            <div class="col-12">
-                                <nav aria-label="Page navigation" class="float-right">
-                                    <ul class="pagination" id="pagination"></ul>
-                                </nav>
                             </div>
                         </div>
                     </div>
@@ -632,15 +617,13 @@
 
 <?= form_open('', array('id' => 'pager')); ?>
 <input type="hidden" id="pager-page" name="page" value="1">
-<input type="hidden" id="pager-limit" name="limit" value="10">
+<input type="hidden" id="pager-limit" name="limit" value="10000">
 <?= form_close() ?>
 
-<script src="<?=base_url()?>/assets/app/js/jquery.twbsPagination.js" type="text/javascript"></script>
 <script>
     let currentPage = 1;
-    let perPage = 10;
     let unitAktif = 'mts';
-    let $pagination, defaultOpts, query, actionBulk;
+    let query, actionBulk;
     let searchTimer = null;
     let siswaXhr = null;
     let jilidAktif = '';
@@ -932,27 +915,6 @@
                     swal.fire({title: 'ERROR', text: 'Gagal menghubungi server.', icon: 'error'});
                 });
             });
-        });
-
-        $pagination = $('#pagination');
-        defaultOpts = {
-            visiblePages: 5,
-            initiateStartPageClick: false,
-            onPageClick: function (event, page) {
-                console.info(page + ' (from options)');
-                clearTimeout(searchTimer);
-                currentPage = page;
-                loadSiswa();
-            }
-        };
-        $pagination.twbsPagination(defaultOpts);
-
-        $('#users_length').change(function () {
-            $('#pager-limit').val($(this).val());
-            perPage = $(this).val();
-            clearTimeout(searchTimer);
-            currentPage = 1;
-            loadSiswa();
         });
 
         $('#users-filter').change(function () {
@@ -1390,16 +1352,6 @@
                 if (xhr !== siswaXhr) { return; }
                 $('#loading').addClass('d-none');
                 $('#search-loading').addClass('d-none');
-                if (data.pages > 0) {
-                    $pagination.removeClass('d-none');
-                    $pagination.twbsPagination('destroy');
-                    $pagination.twbsPagination($.extend({}, defaultOpts, {
-                        startPage: currentPage,
-                        totalPages: data.pages,
-                    }));
-                } else {
-                    $pagination.addClass('d-none');
-                }
                 previewData(data);
             }, error: function (xhrObj, status) {
                 if (status === 'abort' || xhr !== siswaXhr) { return; }
@@ -1506,7 +1458,7 @@
                     '       <input name="checked[]" class="check" value="' + esc(siswa.id_siswa) + '" type="checkbox">' +
                     '   </td>' +
                     '   <td class="text-center align-middle">' +
-                    Number((perPage * (currentPage - 1)) + (idx + 1)) + '</td>' +
+                    Number(idx + 1) + '</td>' +
                     '   <td>' +
                     '       <div class="media d-flex h-100">' +
                     '           <img class="avatar img-circle justify-content-center align-self-center"' +
