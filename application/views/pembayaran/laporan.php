@@ -142,7 +142,14 @@
                                 <td><?= html_escape(unit_nama(isset($row->unit_id) ? $row->unit_id : 0)); ?></td>
                                 <td><?= $this->Pembayaran_model->get_nama_kelas_siswa($row->siswa_id); ?></td>
                                 <td><?= html_escape($row->untuk); ?></td>
-                                <td class="text-nowrap">Rp <?= number_format($row->jumlah_bayar, 0, ',', '.'); ?></td>
+                                <td class="text-nowrap">
+                                    Rp <?= number_format($row->jumlah_bayar, 0, ',', '.'); ?>
+                                    <?= badge_penginput(
+                                        isset($row->diverifikasi_oleh) ? $row->diverifikasi_oleh : null,
+                                        isset($row->diverifikasi_oleh_nama) ? $row->diverifikasi_oleh_nama : null,
+                                        'Diproses oleh'
+                                    ); ?>
+                                </td>
                                 <td><?= ucfirst(str_replace('_', ' ', $row->metode_pembayaran)); ?></td>
                                 <td>
                                     <?php if($row->status_pembayaran == 'success'): ?>

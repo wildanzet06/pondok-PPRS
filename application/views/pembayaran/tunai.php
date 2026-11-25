@@ -27,6 +27,8 @@
                 <i class="fas fa-info-circle text-primary mr-1"></i>
                 Pembayaran tunai langsung tercatat <b>Lunas</b> (atau <b>Cicilan</b> bila jumlahnya sebagian)
                 pada tagihan siswa, dan langsung masuk ke laporan penerimaan SPP.
+                Nama Anda (<b><?= html_escape(nama_lengkap_user($user)); ?></b>) otomatis melekat
+                pada nominal sebagai penanda siapa yang menginput.
             </div>
 
             <div class="alert alert-success d-none" id="kotak-sukses">

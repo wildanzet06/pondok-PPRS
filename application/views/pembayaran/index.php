@@ -105,7 +105,14 @@
                                 <td><?= $row->nama; ?></td>
                                 <td><?= $this->Pembayaran_model->get_nama_kelas_siswa($row->siswa_id); ?></td>
                                 <td><?= html_escape($row->untuk); ?></td>
-                                <td class="text-nowrap">Rp <?= number_format($row->jumlah_bayar, 0, ',', '.'); ?></td>
+                                <td class="text-nowrap">
+                                    Rp <?= number_format($row->jumlah_bayar, 0, ',', '.'); ?>
+                                    <?= badge_penginput(
+                                        isset($row->diverifikasi_oleh) ? $row->diverifikasi_oleh : null,
+                                        isset($row->diverifikasi_oleh_nama) ? $row->diverifikasi_oleh_nama : null,
+                                        'Diproses oleh'
+                                    ); ?>
+                                </td>
                                 <td>
                                     <?php if($row->metode_pembayaran == 'transfer_manual'): ?>
                                         <span class="badge badge-secondary">Transfer Manual</span>
@@ -119,7 +126,7 @@
                                     <?php if($row->status_pembayaran == 'pending'): ?>
                                         <span class="badge badge-warning">Pending</span>
                                     <?php elseif($row->status_pembayaran == 'success'): ?>
-                                        <span class="badge badge-success" title="<?= !empty($row->diverifikasi_oleh) ? 'Diverifikasi oleh ' . html_escape($row->diverifikasi_oleh) : ''; ?>">Lunas</span>
+                                        <span class="badge badge-success" title="<?= !empty($row->diverifikasi_oleh) ? 'Diverifikasi oleh ' . html_escape(nama_penginput($row->diverifikasi_oleh, isset($row->diverifikasi_oleh_nama) ? $row->diverifikasi_oleh_nama : null)) : ''; ?>">Lunas</span>
                                     <?php else: ?>
                                         <span class="badge badge-danger" title="<?= !empty($row->catatan_admin) ? 'Alasan: ' . html_escape($row->catatan_admin) : ''; ?>">Gagal</span>
                                         <?php if(!empty($row->catatan_admin)): ?><br><small class="text-muted"><?= html_escape($row->catatan_admin); ?></small><?php endif; ?>

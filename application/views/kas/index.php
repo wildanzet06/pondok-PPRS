@@ -119,6 +119,9 @@
                                     <label>Keterangan <small class="text-muted">(opsional)</small></label>
                                     <textarea name="keterangan" rows="2" maxlength="255" class="form-control"
                                               placeholder="Catatan tambahan"></textarea>
+                                    <small class="form-text text-muted">
+                                        Nama Anda otomatis ditampilkan di samping nominal sebagai penanda input.
+                                    </small>
                                 </div>
                             </div>
                             <div class="card-footer">
@@ -164,13 +167,12 @@
                                             <th>Kategori</th>
                                             <th>Keterangan</th>
                                             <th class="text-right">Nominal</th>
-                                            <th class="text-center">Oleh</th>
                                             <th class="text-center" style="width:56px"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                     <?php if (empty($daftar)): ?>
-                                        <tr><td colspan="6" class="text-center text-muted py-4">Belum ada transaksi pada bulan ini.</td></tr>
+                                        <tr><td colspan="5" class="text-center text-muted py-4">Belum ada transaksi pada bulan ini.</td></tr>
                                     <?php else: ?>
                                         <?php foreach ($daftar as $r): ?>
                                             <tr>
@@ -187,8 +189,11 @@
                                                 <td class="text-right text-nowrap">
                                                     <?= $r->jenis === 'masuk' ? '+' : '&minus;'; ?>
                                                     Rp <?= number_format((float) $r->nominal, 0, ',', '.'); ?>
+                                                    <?= badge_penginput(
+                                                        $r->dibuat_oleh,
+                                                        isset($r->dibuat_oleh_nama) ? $r->dibuat_oleh_nama : null
+                                                    ); ?>
                                                 </td>
-                                                <td class="text-center small"><?= html_escape($r->dibuat_oleh ? $r->dibuat_oleh : '-'); ?></td>
                                                 <td class="text-center">
                                                     <?= form_open('kas/hapus', array('class' => 'd-inline', 'onsubmit' => "return confirm('Hapus transaksi ini?')")); ?>
                                                         <input type="hidden" name="id" value="<?= (int) $r->id; ?>">
@@ -207,7 +212,7 @@
                                             <th class="text-right">
                                                 Rp <?= number_format($pemasukan_bulan - $keluar_bulan, 0, ',', '.'); ?>
                                             </th>
-                                            <th colspan="2"></th>
+                                            <th></th>
                                         </tr>
                                     </tfoot>
                                 </table>

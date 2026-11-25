@@ -128,7 +128,8 @@ class Kas extends CI_Controller {
             'kategori'    => mb_substr($kategori, 0, 60),
             'keterangan'  => mb_substr($keterangan, 0, 255),
             'nominal'     => $nominal,
-            'dibuat_oleh' => $user ? $user->username : null
+            'dibuat_oleh' => $user ? $user->username : null,
+            'dibuat_oleh_nama' => $user ? nama_lengkap_user($user) : null
         ));
 
         $this->session->set_flashdata('success', 'Transaksi kas berhasil disimpan.');
@@ -166,13 +167,17 @@ class Kas extends CI_Controller {
             return ($v !== '' && strpos('=+-@', $v[0]) !== false) ? "'" . $v : $v;
         };
 
-        fputcsv($out, array('Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Nominal', 'Dicatat oleh'));
+        fputcsv($out, array('Tanggal', 'Jenis', 'Kategori', 'Keterangan', 'Nominal', 'Dicatat oleh', 'Username'));
         foreach ($rows as $r) {
+            $nama = nama_penginput(
+                $r->dibuat_oleh,
+                isset($r->dibuat_oleh_nama) ? $r->dibuat_oleh_nama : null
+            );
             fputcsv($out, array(
                 date('d/m/Y', strtotime($r->tanggal)),
                 $aman($r->jenis), $aman($r->kategori), $aman($r->keterangan),
                 number_format((float) $r->nominal, 2, '.', ''),
-                $aman($r->dibuat_oleh)
+                $aman($nama), $aman($r->dibuat_oleh)
             ));
         }
         fclose($out);

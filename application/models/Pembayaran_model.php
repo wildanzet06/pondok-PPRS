@@ -358,6 +358,9 @@ class Pembayaran_model extends CI_Model {
         if ($this->db->field_exists('diverifikasi_oleh', 'cbt_pembayaran_spp')) {
             $isi['diverifikasi_oleh'] = isset($data['oleh']) ? (string) $data['oleh'] : null;
         }
+        if ($this->db->field_exists('diverifikasi_oleh_nama', 'cbt_pembayaran_spp')) {
+            $isi['diverifikasi_oleh_nama'] = isset($data['oleh_nama']) ? (string) $data['oleh_nama'] : null;
+        }
         if ($this->db->field_exists('diverifikasi_pada', 'cbt_pembayaran_spp')) {
             $isi['diverifikasi_pada'] = date('Y-m-d H:i:s');
         }

@@ -24,11 +24,16 @@ class Kas_model extends CI_Model {
                 keterangan  VARCHAR(255) NULL,
                 nominal     DECIMAL(15,2) NOT NULL DEFAULT 0,
                 dibuat_oleh VARCHAR(100) NULL,
+                dibuat_oleh_nama VARCHAR(100) NULL,
                 created_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 KEY idx_tanggal (tanggal),
                 KEY idx_jenis (jenis)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        } elseif (!$this->db->field_exists('dibuat_oleh_nama', 'cbt_kas')) {
+            // Pemasangan lama menyimpan username saja. Tambahkan kolom nama agar
+            // badge di halaman kas tidak perlu terus-menerus lookup ke users.
+            $this->db->query('ALTER TABLE cbt_kas ADD COLUMN dibuat_oleh_nama VARCHAR(100) DEFAULT NULL');
         }
     }
 

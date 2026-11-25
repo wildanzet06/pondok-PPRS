@@ -50,6 +50,17 @@
                 <td><strong>Jumlah</strong></td>
                 <td>: <strong style="font-size: 18px;">Rp <?= number_format($pembayaran->jumlah_bayar, 0, ',', '.'); ?></strong></td>
             </tr>
+            <?php
+            $nama_input = nama_penginput(
+                isset($pembayaran->diverifikasi_oleh) ? $pembayaran->diverifikasi_oleh : null,
+                isset($pembayaran->diverifikasi_oleh_nama) ? $pembayaran->diverifikasi_oleh_nama : null
+            );
+            if ($nama_input !== '-'): ?>
+            <tr>
+                <td><strong>Dicatat oleh</strong></td>
+                <td>: <?= html_escape($nama_input); ?></td>
+            </tr>
+            <?php endif; ?>
             <tr>
                 <td><strong>Metode Pembayaran</strong></td>
                 <td>: <?= ucfirst(str_replace('_', ' ', $pembayaran->metode_pembayaran)); ?></td>

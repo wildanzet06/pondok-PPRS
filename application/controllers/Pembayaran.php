@@ -563,7 +563,8 @@ class Pembayaran extends CI_Controller {
             'tanggal'      => $tanggal,
             'tagihan_id'   => $id_tagihan > 0 ? $id_tagihan : null,
             'catatan'      => $catatan,
-            'oleh'         => $user ? $user->username : null
+            'oleh'         => $user ? $user->username : null,
+            'oleh_nama'    => $user ? nama_lengkap_user($user) : null
         ));
 
         if (!$id) {
@@ -611,9 +612,10 @@ class Pembayaran extends CI_Controller {
     private function _audit_fields($catatan = null) {
         $user  = $this->ion_auth->user()->row();
         $isi   = array(
-            'diverifikasi_oleh' => $user ? $user->username : null,
-            'diverifikasi_pada' => date('Y-m-d H:i:s'),
-            'catatan_admin'     => ($catatan !== null && $catatan !== '') ? mb_substr($catatan, 0, 255) : null
+            'diverifikasi_oleh'     => $user ? $user->username : null,
+            'diverifikasi_oleh_nama' => $user ? nama_lengkap_user($user) : null,
+            'diverifikasi_pada'     => date('Y-m-d H:i:s'),
+            'catatan_admin'         => ($catatan !== null && $catatan !== '') ? mb_substr($catatan, 0, 255) : null
         );
 
         $hasil = array();
@@ -1028,13 +1030,17 @@ class Pembayaran extends CI_Controller {
                 (int) $r->jumlah_bayar,
                 isset($label_metode[$r->metode_pembayaran]) ? $label_metode[$r->metode_pembayaran] : $r->metode_pembayaran,
                 isset($label_status[$r->status_pembayaran]) ? $label_status[$r->status_pembayaran] : 'Gagal',
-                $r->tanggal_bayar ? date('d/m/Y H:i', strtotime($r->tanggal_bayar)) : ''
+                $r->tanggal_bayar ? date('d/m/Y H:i', strtotime($r->tanggal_bayar)) : '',
+                nama_penginput(
+                    isset($r->diverifikasi_oleh) ? $r->diverifikasi_oleh : null,
+                    isset($r->diverifikasi_oleh_nama) ? $r->diverifikasi_oleh_nama : null
+                )
             );
         }
 
         $this->_kirim_csv(
             'laporan_spp_' . date('Ymd_His') . '.csv',
-            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Unit', 'Untuk Pembayaran', 'Jumlah (Rp)', 'Metode', 'Status', 'Tanggal'),
+            array('No', 'NIS', 'Nama Siswa', 'Kelas', 'Unit', 'Untuk Pembayaran', 'Jumlah (Rp)', 'Metode', 'Status', 'Tanggal', 'Dicatat oleh'),
             $baris
         );
     }
