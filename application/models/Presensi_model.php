@@ -392,29 +392,50 @@ class Presensi_model extends CI_Model {
      * $data: array(siswa_id => array('status' => 'H|I|S|A', 'ket' => '...'))
      * Mengembalikan id sesi.
      */
-    public function simpan($id_tp, $id_smt, $id_kelas, $tanggal, $jam_ke, $mapel_id, $mapel_nama, $oleh, $data) {
+    public function simpan($id_tp, $id_smt, $id_kelas, $tanggal, $jam_ke, $mapel_id, $mapel_nama, $oleh, $oleh_nama, $data) {
         $this->db->trans_start();
 
         $sesi = $this->get_sesi($id_kelas, $tanggal, $jam_ke);
         if ($sesi) {
             $sesi_id = (int) $sesi->id;
+            $isi = array(
+                'mapel_id'   => $mapel_id ? $mapel_id : null,
+                'mapel_nama' => ($mapel_nama !== '') ? $mapel_nama : null
+            );
+            // Yang pertama mengisi tetap tercatat; pengubah terakhir disimpan terpisah.
+            if ($this->db->field_exists('dibuat_oleh', 'cbt_presensi_sesi')) {
+                $isi['dibuat_oleh'] = !empty($sesi->dibuat_oleh) ? $sesi->dibuat_oleh : $oleh;
+            }
+            if ($this->db->field_exists('dibuat_oleh_nama', 'cbt_presensi_sesi')) {
+                $isi['dibuat_oleh_nama'] = !empty($sesi->dibuat_oleh_nama)
+                    ? $sesi->dibuat_oleh_nama
+                    : (!empty($sesi->dibuat_oleh) ? null : $oleh_nama);
+            }
+            if ($this->db->field_exists('diubah_oleh', 'cbt_presensi_sesi')) {
+                $isi['diubah_oleh'] = $oleh;
+            }
+            if ($this->db->field_exists('diubah_oleh_nama', 'cbt_presensi_sesi')) {
+                $isi['diubah_oleh_nama'] = $oleh_nama;
+            }
             $this->db->where('id', $sesi_id);
-            $this->db->update('cbt_presensi_sesi', array(
-                'mapel_id'    => $mapel_id ? $mapel_id : null,
-                'mapel_nama'  => ($mapel_nama !== '') ? $mapel_nama : null,
-                'dibuat_oleh' => $oleh
-            ));
+            $this->db->update('cbt_presensi_sesi', $isi);
         } else {
-            $this->db->insert('cbt_presensi_sesi', array(
-                'id_tp'       => (int) $id_tp,
-                'id_smt'      => (int) $id_smt,
-                'id_kelas'    => (int) $id_kelas,
-                'tanggal'     => $tanggal,
-                'jam_ke'      => (int) $jam_ke,
-                'mapel_id'    => $mapel_id ? $mapel_id : null,
-                'mapel_nama'  => ($mapel_nama !== '') ? $mapel_nama : null,
-                'dibuat_oleh' => $oleh
-            ));
+            $isi = array(
+                'id_tp'      => (int) $id_tp,
+                'id_smt'     => (int) $id_smt,
+                'id_kelas'   => (int) $id_kelas,
+                'tanggal'    => $tanggal,
+                'jam_ke'     => (int) $jam_ke,
+                'mapel_id'   => $mapel_id ? $mapel_id : null,
+                'mapel_nama' => ($mapel_nama !== '') ? $mapel_nama : null
+            );
+            if ($this->db->field_exists('dibuat_oleh', 'cbt_presensi_sesi')) {
+                $isi['dibuat_oleh'] = $oleh;
+            }
+            if ($this->db->field_exists('dibuat_oleh_nama', 'cbt_presensi_sesi')) {
+                $isi['dibuat_oleh_nama'] = $oleh_nama;
+            }
+            $this->db->insert('cbt_presensi_sesi', $isi);
             $sesi_id = (int) $this->db->insert_id();
         }
 
@@ -455,7 +476,9 @@ class Presensi_model extends CI_Model {
                   COALESCE(SUM(p.status = 'H'), 0) AS h,
                   COALESCE(SUM(p.status = 'I'), 0) AS i,
                   COALESCE(SUM(p.status = 'S'), 0) AS s_,
-                  COALESCE(SUM(p.status = 'A'), 0) AS a";
+                  COALESCE(SUM(p.status = 'A'), 0) AS a,
+                  GROUP_CONCAT(DISTINCT COALESCE(NULLIF(ps.dibuat_oleh_nama, ''), NULLIF(ps.dibuat_oleh, '')) SEPARATOR '|') AS penginput,
+                  GROUP_CONCAT(DISTINCT COALESCE(NULLIF(ps.diubah_oleh_nama, ''), NULLIF(ps.diubah_oleh, '')) SEPARATOR '|') AS penginput_akhir";
         $k     = $this->kelas_virtual($id_kelas);
         $param = array();
 
@@ -523,7 +546,8 @@ class Presensi_model extends CI_Model {
 
     // Riwayat presensi satu siswa
     public function riwayat_siswa($siswa_id, $dari, $sampai) {
-        $sql = "SELECT ps.tanggal, ps.jam_ke, ps.mapel_nama, p.status, p.keterangan
+        $sql = "SELECT ps.tanggal, ps.jam_ke, ps.mapel_nama, p.status, p.keterangan,
+                       ps.dibuat_oleh, ps.dibuat_oleh_nama, ps.diubah_oleh, ps.diubah_oleh_nama
                 FROM cbt_presensi p
                 JOIN cbt_presensi_sesi ps ON ps.id = p.sesi_id
                 WHERE p.siswa_id = ? AND ps.tanggal BETWEEN ? AND ?

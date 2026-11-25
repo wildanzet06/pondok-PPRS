@@ -92,6 +92,7 @@ $unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
                                 <th>No</th>
                                 <th>NIS</th>
                                 <th>Nama Siswa</th>
+                                <th>Diisi oleh</th>
                                 <th class="text-center">Hadir</th>
                                 <th class="text-center">Izin</th>
                                 <th class="text-center">Sakit</th>
@@ -106,6 +107,25 @@ $unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
                                     <td><?= $no++; ?></td>
                                     <td><?= html_escape($r->nis); ?></td>
                                     <td><?= html_escape($r->nama); ?></td>
+                                    <td>
+                                        <?= badges_penginput(isset($r->penginput) ? $r->penginput : null, 'Mengisi presensi'); ?>
+                                        <?php
+                                        $bersih = function ($teks) {
+                                            $keluar = array();
+                                            foreach (explode('|', (string) $teks) as $satu) {
+                                                $satu = nama_lengkap_user($satu);
+                                                if ($satu !== '' && $satu !== '-' && !in_array($satu, $keluar, true)) {
+                                                    $keluar[] = $satu;
+                                                }
+                                            }
+                                            return $keluar;
+                                        };
+                                        $akhir = $bersih(isset($r->penginput_akhir) ? $r->penginput_akhir : '');
+                                        $awal  = $bersih(isset($r->penginput) ? $r->penginput : '');
+                                        if ($akhir && array_diff($akhir, $awal)): ?>
+                                            <small class="text-muted d-block">Terakhir diubah: <?= html_escape(implode(', ', $akhir)); ?></small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td class="text-center"><?= $r->h; ?></td>
                                     <td class="text-center"><?= $r->i; ?></td>
                                     <td class="text-center"><?= $r->s_; ?></td>

@@ -242,7 +242,10 @@ class Presensi extends CI_Controller {
         $user = $this->ion_auth->user()->row();
         $id = $this->Presensi_model->simpan(
             $tp->id_tp, $smt->id_smt, $kelas_id, $tanggal, $jam,
-            $mapel_id, $mapel_nama, $user ? $user->username : null, $data
+            $mapel_id, $mapel_nama,
+            $user ? $user->username : null,
+            $user ? nama_lengkap_user($user) : null,
+            $data
         );
 
         if ($id) {
@@ -360,8 +363,17 @@ class Presensi extends CI_Controller {
         $baris = array();
         $no = 1;
         foreach ($rows as $r) {
+            $penginput = array();
+            foreach (explode('|', (string) (isset($r->penginput) ? $r->penginput : '')) as $satu) {
+                $satu = nama_lengkap_user($satu);
+                if ($satu !== '' && $satu !== '-' && !in_array($satu, $penginput, true)) {
+                    $penginput[] = $satu;
+                }
+            }
             $baris[] = array(
-                $no++, $r->nis, $r->nama, $r->h, $r->i, $r->s_, $r->a, $r->total,
+                $no++, $r->nis, $r->nama,
+                $penginput ? implode(', ', $penginput) : '-',
+                $r->h, $r->i, $r->s_, $r->a, $r->total,
                 $r->persen === null ? '' : $r->persen . '%'
             );
         }
@@ -370,7 +382,7 @@ class Presensi extends CI_Controller {
                    . '_' . $tahun . '-' . sprintf('%02d', $bulan) . '.csv';
 
         $this->_kirim_csv($nama_file,
-            array('No', 'NIS', 'Nama Siswa', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Total Sesi', '% Hadir'),
+            array('No', 'NIS', 'Nama Siswa', 'Diisi oleh', 'Hadir', 'Izin', 'Sakit', 'Alpa', 'Total Sesi', '% Hadir'),
             $baris);
     }
 

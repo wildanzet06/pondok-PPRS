@@ -1,7 +1,7 @@
 <?php
 $warna = array('H' => 'success', 'I' => 'info', 'S' => 'warning', 'A' => 'danger');
 $tanpa_jam = ($unit === 'tpq');
-$kolom = $tanpa_jam ? 4 : 5;
+$kolom = $tanpa_jam ? 5 : 6;
 ?>
 <div class="content-wrapper">
     <section class="content-header">
@@ -58,7 +58,7 @@ $kolom = $tanpa_jam ? 4 : 5;
                             <tr>
                                 <th>Tanggal</th>
                                 <?php if (!$tanpa_jam): ?><th>Jam ke-</th><?php endif; ?>
-                                <th>Mata Pelajaran</th><th>Status</th><th>Keterangan</th>
+                                <th>Mata Pelajaran</th><th>Diisi oleh</th><th>Status</th><th>Keterangan</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -67,6 +67,25 @@ $kolom = $tanpa_jam ? 4 : 5;
                                     <td><?= date('d/m/Y', strtotime($r->tanggal)); ?></td>
                                     <?php if (!$tanpa_jam): ?><td><?= (int) $r->jam_ke; ?></td><?php endif; ?>
                                     <td><?= html_escape($r->mapel_nama); ?></td>
+                                    <td>
+                                        <?= badge_penginput(
+                                            isset($r->dibuat_oleh) ? $r->dibuat_oleh : null,
+                                            isset($r->dibuat_oleh_nama) ? $r->dibuat_oleh_nama : null,
+                                            'Mengisi presensi'
+                                        ); ?>
+                                        <?php
+                                        $pembuat = nama_penginput(
+                                            isset($r->dibuat_oleh) ? $r->dibuat_oleh : null,
+                                            isset($r->dibuat_oleh_nama) ? $r->dibuat_oleh_nama : null
+                                        );
+                                        $pengubah = nama_penginput(
+                                            isset($r->diubah_oleh) ? $r->diubah_oleh : null,
+                                            isset($r->diubah_oleh_nama) ? $r->diubah_oleh_nama : null
+                                        );
+                                        if ($pengubah !== '-' && $pengubah !== $pembuat): ?>
+                                            <small class="text-muted d-block">Diubah: <?= html_escape($pengubah); ?></small>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><span class="badge badge-<?= $warna[$r->status]; ?>"><?= $status_ref[$r->status]; ?></span></td>
                                     <td><?= html_escape($r->keterangan); ?></td>
                                 </tr>

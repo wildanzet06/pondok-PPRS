@@ -91,3 +91,29 @@ if (!function_exists('badge_penginput')) {
             . html_escape($nama) . '</span></div>';
     }
 }
+
+if (!function_exists('badges_penginput')) {
+    /** Beberapa badge dari daftar username/nama yang sudah digabung (pipe). */
+    function badges_penginput($daftar, $label = 'Diisi oleh')
+    {
+        if (is_string($daftar)) {
+            $daftar = explode('|', $daftar);
+        }
+        $nama = array();
+        foreach ((array) $daftar as $item) {
+            $item = nama_lengkap_user($item);
+            if ($item !== '' && $item !== '-' && !in_array($item, $nama, true)) {
+                $nama[] = $item;
+            }
+        }
+        if (!$nama) {
+            return '<span class="text-muted">-</span>';
+        }
+
+        $html = '';
+        foreach ($nama as $satu) {
+            $html .= badge_penginput($satu, $satu, $label);
+        }
+        return $html;
+    }
+}

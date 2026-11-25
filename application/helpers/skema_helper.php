@@ -188,6 +188,9 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 mapel_id     INT          NULL,
                 mapel_nama   VARCHAR(100) NULL,
                 dibuat_oleh  VARCHAR(100) NULL,
+                dibuat_oleh_nama VARCHAR(100) NULL,
+                diubah_oleh  VARCHAR(100) NULL,
+                diubah_oleh_nama VARCHAR(100) NULL,
                 created_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uk_sesi (id_kelas, tanggal, jam_ke),
@@ -265,6 +268,9 @@ if (!function_exists('skema_tambahan_pastikan')) {
             array('cbt_keringanan',     'dibuat_oleh_nama',  'ALTER TABLE cbt_keringanan ADD COLUMN dibuat_oleh_nama VARCHAR(100) DEFAULT NULL'),
             array('cbt_keringanan',     'diubah_oleh',       'ALTER TABLE cbt_keringanan ADD COLUMN diubah_oleh VARCHAR(100) DEFAULT NULL'),
             array('cbt_keringanan',     'diubah_oleh_nama',  'ALTER TABLE cbt_keringanan ADD COLUMN diubah_oleh_nama VARCHAR(100) DEFAULT NULL'),
+            array('cbt_presensi_sesi',  'dibuat_oleh_nama',  'ALTER TABLE cbt_presensi_sesi ADD COLUMN dibuat_oleh_nama VARCHAR(100) DEFAULT NULL'),
+            array('cbt_presensi_sesi',  'diubah_oleh',       'ALTER TABLE cbt_presensi_sesi ADD COLUMN diubah_oleh VARCHAR(100) DEFAULT NULL'),
+            array('cbt_presensi_sesi',  'diubah_oleh_nama',  'ALTER TABLE cbt_presensi_sesi ADD COLUMN diubah_oleh_nama VARCHAR(100) DEFAULT NULL'),
             array('cbt_tagihan',        'unit_id',           'ALTER TABLE cbt_tagihan ADD COLUMN unit_id TINYINT UNSIGNED NOT NULL DEFAULT 0'),
             array('master_siswa_unit',  'jilid',             'ALTER TABLE master_siswa_unit ADD COLUMN jilid VARCHAR(20) DEFAULT NULL')
         );
