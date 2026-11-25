@@ -77,7 +77,7 @@ if (!function_exists('nama_penginput')) {
 }
 
 if (!function_exists('badge_penginput')) {
-    /** Badge kecil di samping nominal untuk menunjukkan siapa yang menginput. */
+    /** Badge kecil di bawah nominal untuk menunjukkan siapa yang menginput. */
     function badge_penginput($username, $nama_tersimpan = null, $label = 'Dicatat oleh')
     {
         $nama = nama_penginput($username, $nama_tersimpan);
@@ -86,8 +86,8 @@ if (!function_exists('badge_penginput')) {
         }
 
         $judul = html_escape($label . ': ' . $nama);
-        return '<span class="badge badge-light border text-dark font-weight-normal ml-1" '
+        return '<div class="mt-1"><span class="badge badge-light border text-dark font-weight-normal" '
             . 'title="' . $judul . '"><i class="fas fa-user-circle mr-1"></i>'
-            . html_escape($nama) . '</span>';
+            . html_escape($nama) . '</span></div>';
     }
 }

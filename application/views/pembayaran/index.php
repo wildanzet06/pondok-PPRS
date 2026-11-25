@@ -146,14 +146,17 @@
                                     <?php endif; ?>
 
                                     <?php if($row->status_pembayaran == 'success'): ?>
-                                        <a href="<?= site_url('pembayaran/kwitansi/'.$row->id); ?>" class="btn btn-sm btn-info mb-1">
-                                            <i class="fa fa-print"></i> Kwitansi
+                                        <a href="<?= site_url('pembayaran/kwitansi/'.$row->id); ?>"
+                                           class="btn btn-sm btn-info mb-1"
+                                           title="Cetak kwitansi" aria-label="Cetak kwitansi">
+                                            <i class="fa fa-print"></i>
                                         </a>
                                         <?php if($row->metode_pembayaran == 'tunai'): ?>
                                             <button type="button" class="btn btn-sm btn-outline-danger mb-1"
                                                     onclick="batalkanTunai(<?= (int) $row->id; ?>)"
-                                                    title="Hapus pembayaran tunai yang salah input">
-                                                <i class="fa fa-undo"></i> Batalkan
+                                                    title="Hapus pembayaran tunai yang salah input"
+                                                    aria-label="Batalkan pembayaran tunai">
+                                                <i class="fa fa-undo"></i>
                                             </button>
                                         <?php endif; ?>
                                     <?php endif; ?>
