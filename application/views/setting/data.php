@@ -165,6 +165,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                                        data-max-file-size-preview="2M"
                                        data-allowed-file-extensions="jpg jpeg png"
                                        data-default-file="<?= base_url() . $setting->logo_kiri ?>"/>
+                                <small class="text-muted">Setelah memilih file, klik <b>Simpan</b> agar logo baru tersimpan.</small>
                             </div>
                             <?= form_close() ?>
                         </div>
@@ -191,6 +192,8 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
     var logoKiri = '<?=base_url() . $setting->logo_kiri?>';
     var tandatangan = '<?=base_url() . $setting->tanda_tangan?>';
     var satuanPend = JSON.parse(JSON.stringify(<?= json_encode($satuan)?>));
+    var csrfName = '<?= $this->security->get_csrf_token_name() ?>';
+    var csrfHash = '<?= $this->security->get_csrf_hash() ?>';
 
     function submitSetting() {
         $('#savesetting').submit();
@@ -370,6 +373,10 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
         });
 
         function uploadAttach(action, data) {
+            // FormData tidak ikut $.ajaxSetup(), jadi token CSRF harus ditambahkan manual.
+            if (data instanceof FormData) {
+                data.append(csrfName, csrfHash);
+            }
             $.ajax({
                 type: "POST",
                 enctype: 'multipart/form-data',

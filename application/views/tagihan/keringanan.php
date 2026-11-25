@@ -133,6 +133,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                         <th>Berlaku untuk</th>
                                         <th>Potongan</th>
                                         <th>Alasan</th>
+                                        <th>Diberikan oleh</th>
                                         <th>Status</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -151,6 +152,27 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                                 <?php endif; ?>
                                             </td>
                                             <td><?= html_escape($k->keterangan); ?></td>
+                                            <td>
+                                                <?= badge_penginput(
+                                                    isset($k->dibuat_oleh) ? $k->dibuat_oleh : null,
+                                                    isset($k->dibuat_oleh_nama) ? $k->dibuat_oleh_nama : null,
+                                                    'Diberikan oleh'
+                                                ); ?>
+                                                <?php
+                                                $pengubah = nama_penginput(
+                                                    isset($k->diubah_oleh) ? $k->diubah_oleh : null,
+                                                    isset($k->diubah_oleh_nama) ? $k->diubah_oleh_nama : null
+                                                );
+                                                $pemberi = nama_penginput(
+                                                    isset($k->dibuat_oleh) ? $k->dibuat_oleh : null,
+                                                    isset($k->dibuat_oleh_nama) ? $k->dibuat_oleh_nama : null
+                                                );
+                                                if ($pengubah !== '-' && $pengubah !== $pemberi): ?>
+                                                    <small class="text-muted d-block" title="Terakhir diubah oleh <?= html_escape($pengubah); ?>">
+                                                        Diubah: <?= html_escape($pengubah); ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </td>
                                             <td><?= $k->aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-light">Nonaktif</span>'; ?></td>
                                             <td>
                                                 <a href="<?= site_url('tagihan/keringanan?edit=' . (int) $k->id); ?>" class="btn btn-warning btn-xs">
@@ -163,7 +185,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($daftar)): ?>
-                                        <tr><td colspan="6" class="text-center text-muted">Belum ada keringanan.</td></tr>
+                                        <tr><td colspan="7" class="text-center text-muted">Belum ada keringanan.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -181,6 +203,12 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
     $(function () {
         if ($.fn.select2) {
             $('#siswa_id').select2({theme: 'bootstrap4'});
+        }
+
+        // Kalau datang dari tombol Edit, gulir ke form agar langsung terlihat.
+        if (/[?&]edit=\d+/.test(window.location.search)) {
+            $('html, body').animate({scrollTop: $('.card-primary').offset().top - 80}, 300);
+            $('.card-primary').addClass('border-warning');
         }
     });
 </script>

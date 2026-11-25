@@ -176,6 +176,7 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                         <th>Nominal Bawaan</th>
                                         <th>Cicilan</th>
                                         <th>Status</th>
+                                        <th>Dibuat oleh</th>
                                         <th>Dipakai</th>
                                         <th>Aksi</th>
                                     </tr>
@@ -213,19 +214,49 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                             <td>
                                                 <?= $j->aktif ? '<span class="badge badge-success">Aktif</span>' : '<span class="badge badge-light">Nonaktif</span>'; ?>
                                             </td>
-                                            <td><?= (int) $j->jml_tagihan; ?> tagihan</td>
                                             <td>
+                                                <?= badge_penginput(
+                                                    isset($j->dibuat_oleh) ? $j->dibuat_oleh : null,
+                                                    isset($j->dibuat_oleh_nama) ? $j->dibuat_oleh_nama : null,
+                                                    'Dibuat oleh'
+                                                ); ?>
+                                                <?php
+                                                $pengubah = nama_penginput(
+                                                    isset($j->diubah_oleh) ? $j->diubah_oleh : null,
+                                                    isset($j->diubah_oleh_nama) ? $j->diubah_oleh_nama : null
+                                                );
+                                                $pembuat = nama_penginput(
+                                                    isset($j->dibuat_oleh) ? $j->dibuat_oleh : null,
+                                                    isset($j->dibuat_oleh_nama) ? $j->dibuat_oleh_nama : null
+                                                );
+                                                if ($pengubah !== '-' && $pengubah !== $pembuat): ?>
+                                                    <small class="text-muted d-block" title="Terakhir diubah oleh <?= html_escape($pengubah); ?>">
+                                                        Diubah: <?= html_escape($pengubah); ?>
+                                                    </small>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><?= (int) $j->jml_tagihan; ?> tagihan</td>
+                                            <td class="text-nowrap">
                                                 <a href="<?= site_url('tagihan/jenis?edit=' . (int) $j->id); ?>" class="btn btn-warning btn-xs">
                                                     <i class="fas fa-edit"></i> Edit
                                                 </a>
-                                                <?= form_open('tagihan/jenis_hapus/' . (int) $j->id, array('class' => 'd-inline', 'onsubmit' => "return confirm('Hapus jenis tagihan ini? Jika sudah pernah dipakai, hanya dinonaktifkan.')")); ?>
-                                                    <button type="submit" class="btn btn-danger btn-xs"><i class="fas fa-trash"></i></button>
+                                                <?php
+                                                $dipakai = (int) $j->jml_tagihan > 0;
+                                                $pesan = $dipakai
+                                                    ? 'Jenis ini sudah dipakai ' . (int) $j->jml_tagihan . ' tagihan. Klik OK untuk menonaktifkannya (data lama tetap tersimpan).'
+                                                    : 'Hapus jenis tagihan ini?';
+                                                ?>
+                                                <?= form_open('tagihan/jenis_hapus/' . (int) $j->id, array('class' => 'd-inline', 'onsubmit' => "return confirm(" . json_encode($pesan) . ")")); ?>
+                                                    <button type="submit" class="btn btn-<?= $dipakai ? 'warning' : 'danger'; ?> btn-xs">
+                                                        <i class="fas fa-<?= $dipakai ? 'ban' : 'trash'; ?>"></i>
+                                                        <?= $dipakai ? 'Nonaktifkan' : 'Hapus'; ?>
+                                                    </button>
                                                 <?= form_close(); ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>
                                     <?php if (empty($daftar_jenis)): ?>
-                                        <tr><td colspan="9" class="text-center text-muted">Belum ada jenis tagihan.</td></tr>
+                                        <tr><td colspan="10" class="text-center text-muted">Belum ada jenis tagihan.</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -244,6 +275,12 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
         var $wrap = $('#wrap_maks_cicilan');
         var $seikhlas = $('#seikhlasnya');
         var $nominal = $('input[name="nominal_default"]');
+
+        // Kalau datang dari tombol Edit, gulir ke form agar langsung terlihat.
+        if (/[?&]edit=\d+/.test(window.location.search)) {
+            $('html, body').animate({scrollTop: $('.card-primary').offset().top - 80}, 300);
+            $('.card-primary').addClass('border-warning');
+        }
 
         function perbarui() {
             var seikhlas = $seikhlas.prop('checked');

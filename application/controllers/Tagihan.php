@@ -167,6 +167,7 @@ class Tagihan extends CI_Controller {
     public function jenis_simpan() {
         $this->_harus_post('tagihan/jenis');
 
+        $user = $this->ion_auth->user()->row();
         $id      = (int) $this->input->post('id');
         $kode    = strtoupper(preg_replace('/[^A-Za-z0-9_]/', '', (string) $this->input->post('kode')));
         $nama    = trim((string) $this->input->post('nama'));
@@ -217,7 +218,18 @@ class Tagihan extends CI_Controller {
             return;
         }
 
-        $this->Tagihan_model->jenis_simpan(array(
+        // Jejak audit: created by hanya diisi saat insert, last edited saat update.
+        $audit = $id
+            ? array(
+                'diubah_oleh'     => $user ? $user->username : null,
+                'diubah_oleh_nama' => $user ? nama_lengkap_user($user) : null
+            )
+            : array(
+                'dibuat_oleh'     => $user ? $user->username : null,
+                'dibuat_oleh_nama' => $user ? nama_lengkap_user($user) : null
+            );
+
+        $this->Tagihan_model->jenis_simpan(array_merge(array(
             'kode'            => $kode,
             'nama'            => mb_substr($nama, 0, 100),
             'tipe'            => $tipe,
@@ -228,7 +240,7 @@ class Tagihan extends CI_Controller {
             'unit_id'         => $unit,
             'keterangan'      => ($ket !== '') ? mb_substr($ket, 0, 255) : null,
             'aktif'           => $aktif
-        ), $id);
+        ), $audit), $id);
 
         $this->session->set_flashdata('success', 'Jenis tagihan disimpan.');
         redirect('tagihan/jenis');
@@ -264,6 +276,7 @@ class Tagihan extends CI_Controller {
     public function keringanan_simpan() {
         $this->_harus_post('tagihan/keringanan');
 
+        $user = $this->ion_auth->user()->row();
         $id       = (int) $this->input->post('id');
         $siswa_id = (int) $this->input->post('siswa_id');
         $jenis_id = (int) $this->input->post('jenis_id'); // 0 = semua jenis
@@ -291,14 +304,24 @@ class Tagihan extends CI_Controller {
             return;
         }
 
-        $this->Tagihan_model->keringanan_simpan(array(
+        $audit = $id
+            ? array(
+                'diubah_oleh'      => $user ? $user->username : null,
+                'diubah_oleh_nama' => $user ? nama_lengkap_user($user) : null
+            )
+            : array(
+                'dibuat_oleh'      => $user ? $user->username : null,
+                'dibuat_oleh_nama' => $user ? nama_lengkap_user($user) : null
+            );
+
+        $this->Tagihan_model->keringanan_simpan(array_merge(array(
             'siswa_id'   => $siswa_id,
             'jenis_id'   => $jenis_id ? $jenis_id : null,
             'tipe'       => $tipe,
             'nilai'      => $nilai,
             'keterangan' => ($ket !== '') ? mb_substr($ket, 0, 255) : null,
             'aktif'      => $aktif
-        ), $id);
+        ), $audit), $id);
 
         $this->session->set_flashdata('success',
             'Keringanan disimpan. Berlaku untuk tagihan yang dibuat setelah ini. '
