@@ -113,42 +113,6 @@
 </div>
 <?= form_close() ?>
 
-<?= form_open('useradmin/reset_password/0', array('id' => 'resetPasswordForm')) ?>
-<div class="modal fade" id="resetPasswordModal" tabindex="-1" role="dialog"
-     aria-labelledby="resetPasswordLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="resetPasswordLabel">Reset Password Admin</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div id="reset-password-errors" class="alert alert-danger d-none mb-3"></div>
-                <p class="mb-3">Password baru untuk <b id="reset-password-target"></b> akan langsung aktif.</p>
-                <div class="form-group">
-                    <label for="reset-password">Password baru</label>
-                    <input type="password" name="password" id="reset-password" class="form-control"
-                           autocomplete="new-password" required>
-                </div>
-                <div class="form-group mb-0">
-                    <label for="reset-confirm-password">Ulangi password baru</label>
-                    <input type="password" name="confirm_password" id="reset-confirm-password" class="form-control"
-                           autocomplete="new-password" required>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
-                <button type="submit" class="btn btn-warning">
-                    <i class="fas fa-key mr-1"></i> Reset Password
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-<?= form_close() ?>
-
 <script type="text/javascript">
     var user_id = '<?=$user->id?>';
 </script>
