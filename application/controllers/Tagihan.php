@@ -65,9 +65,21 @@ class Tagihan extends CI_Controller {
             'unit_id'  => $this->input->get('unit_id')
         );
 
+        // Tab unit memakai id yang sama dengan master_unit, bukan id hardcoded.
+        $unit_tab = array(
+            (int) unit_id_mts()   => 'MTs',
+            (int) unit_id_madin() => 'Madin',
+            (int) unit_id_tpq()   => 'TPQ'
+        );
+        $unit_diminta = (int) $filter['unit_id'];
+        $unit_aktif = isset($unit_tab[$unit_diminta]) ? $unit_diminta : (int) unit_id_mts();
+        $filter['unit_id'] = $unit_aktif;
+
         $data = $this->_admin_data('Daftar Tagihan');
         $data['filter']       = $filter;
         $data['unit']         = unit_pilihan(true);
+        $data['unit_tab']     = $unit_tab;
+        $data['unit_aktif']   = $unit_aktif;
         $data['jenis']        = $this->Tagihan_model->jenis_all();
         $this->load->model('Pembayaran_model');
         $setting_spp = $this->Pembayaran_model->setting_spp();
@@ -102,6 +114,34 @@ class Tagihan extends CI_Controller {
         }
 
         // Kembali ke halaman dengan filter yang sama (hanya kunci yang dikenal)
+        parse_str((string) $this->input->post('qs'), $qs);
+        $aman = array();
+        foreach (array('jenis_id', 'bulan', 'tahun', 'status', 'unit_id') as $k) {
+            if (!empty($qs[$k])) $aman[$k] = $qs[$k];
+        }
+        redirect('tagihan' . ($aman ? '?' . http_build_query($aman) : ''));
+    }
+
+    // Simpan no. HP/WhatsApp wali dari halaman tagihan, supaya tombol WA
+    // bisa mengirim pengingat langsung ke nomor yang benar.
+    public function simpan_hp($siswa_id) {
+        $this->_harus_post('tagihan');
+
+        $siswa_id = (int) $siswa_id;
+        $hp = preg_replace('/\D+/', '', (string) $this->input->post('hp', true));
+
+        if ($siswa_id <= 0 || strlen($hp) < 8 || strlen($hp) > 15) {
+            $this->session->set_flashdata('error', 'No. HP/WhatsApp wali tidak valid.');
+        } else {
+            $ada = $this->db->where('id_siswa', $siswa_id)->count_all_results('master_siswa') > 0;
+            if (!$ada) {
+                $this->session->set_flashdata('error', 'Data siswa tidak ditemukan.');
+            } else {
+                $this->db->where('id_siswa', $siswa_id)->update('master_siswa', array('hp' => $hp));
+                $this->session->set_flashdata('success', 'No. HP wali diperbarui. Tombol WA sekarang mengirim ke nomor ini.');
+            }
+        }
+
         parse_str((string) $this->input->post('qs'), $qs);
         $aman = array();
         foreach (array('jenis_id', 'bulan', 'tahun', 'status', 'unit_id') as $k) {

@@ -53,6 +53,27 @@ $qs_filter = http_build_query(array_filter($filter));
                 </div>
             <?php endif; ?>
 
+            <!-- Tab Unit -->
+            <?php
+            $tab_qs = array();
+            foreach (array('jenis_id', 'bulan', 'tahun', 'status') as $k) {
+                if (!empty($filter[$k])) {
+                    $tab_qs[$k] = $filter[$k];
+                }
+            }
+            ?>
+            <ul class="nav nav-tabs mb-3" id="tagihanUnitTabs">
+                <?php foreach ($unit_tab as $id_unit => $nama_unit): ?>
+                    <?php $qs_tab = http_build_query($tab_qs + array('unit_id' => $id_unit)); ?>
+                    <li class="nav-item">
+                        <a class="nav-link <?= ((int) $unit_aktif === (int) $id_unit) ? 'active' : ''; ?>"
+                           href="<?= site_url('tagihan?' . $qs_tab); ?>">
+                            <?= html_escape($nama_unit); ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
             <!-- Filter -->
             <div class="card card-outline card-primary">
                 <div class="card-body">
@@ -72,18 +93,7 @@ $qs_filter = http_build_query(array_filter($filter));
                                 </div>
                             </div>
 
-                            <div class="col-6 col-md-3">
-                                <div class="form-group mb-2">
-                                    <label>Unit</label>
-                                    <select name="unit_id" class="form-control form-control-sm">
-                                        <?php foreach ($unit as $id_unit => $nama_unit): ?>
-                                            <option value="<?= (int) $id_unit; ?>" <?= ((int) $filter['unit_id'] === (int) $id_unit) ? 'selected' : ''; ?>>
-                                                <?= html_escape($nama_unit); ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-                            </div>
+                            <input type="hidden" name="unit_id" value="<?= (int) $filter['unit_id']; ?>">
 
                             <div class="col-6 col-md-3">
                                 <div class="form-group mb-2">
@@ -236,23 +246,29 @@ $qs_filter = http_build_query(array_filter($filter));
                                         <?php endif; ?>
                                             <?php
                                             // Tombol pengingat WhatsApp (wa.me) untuk tagihan yang belum lunas.
-                                            $wa_hp   = isset($t->hp) ? wa_nomor($t->hp) : '';
-                                            $wa_link = '';
-                                            if ($wa_hp !== '') {
-                                                $wa_pesan = wa_pesan_tagihan(
-                                                    $t,
-                                                    isset($setting->nama_aplikasi) ? $setting->nama_aplikasi : '',
-                                                    isset($rekening) ? $rekening : array(),
-                                                    isset($instruksi_wa) ? $instruksi_wa : ''
-                                                );
-                                                $wa_link = 'https://wa.me/' . $wa_hp . '?text=' . rawurlencode($wa_pesan);
-                                            }
+                                            $wa_aktif = ($t->status != 'lunas' && !$t->gratis);
+                                            $wa_pesan = wa_pesan_tagihan(
+                                                $t,
+                                                isset($setting->nama_aplikasi) ? $setting->nama_aplikasi : '',
+                                                isset($rekening) ? $rekening : array(),
+                                                isset($instruksi_wa) ? $instruksi_wa : ''
+                                            );
+                                            $wa_link = wa_link(isset($t->hp) ? $t->hp : '', $wa_pesan);
+                                            $wa_tanpa_nomor = 'https://wa.me/?text=' . rawurlencode($wa_pesan);
                                             ?>
-                                            <?php if ($wa_link !== '' && $t->status != 'lunas' && !$t->gratis): ?>
-                                                <a href="<?= $wa_link; ?>" target="_blank" rel="noopener"
-                                                   class="btn btn-outline-success btn-xs" title="Kirim pengingat WhatsApp">
+                                            <?php if ($wa_aktif): ?>
+                                                <a href="<?= $wa_link !== '' ? $wa_link : $wa_tanpa_nomor; ?>" target="_blank" rel="noopener"
+                                                   class="btn btn-outline-success btn-xs"
+                                                   title="<?= $wa_link !== '' ? 'Kirim pengingat WhatsApp' : 'Pilih kontak wali di WhatsApp (no. HP belum diisi)'; ?>">
                                                     <i class="fab fa-whatsapp"></i> WA
                                                 </a>
+                                                <?php if ($wa_link === ''): ?>
+                                                    <button type="button" class="btn btn-outline-info btn-xs"
+                                                            onclick="isiHpWa(<?= (int) $t->siswa_id; ?>, '<?= html_escape(addslashes($t->nama)); ?>')"
+                                                            title="Isi no. HP wali agar WA terkirim langsung">
+                                                        <i class="fas fa-phone"></i> HP
+                                                    </button>
+                                                <?php endif; ?>
                                             <?php endif; ?>
                                         <?php if (($t->status != 'lunas' || $t->gratis) && empty($t->seikhlasnya)): ?>
                                             <button type="button" class="btn btn-warning btn-xs"
@@ -306,6 +322,33 @@ $qs_filter = http_build_query(array_filter($filter));
             form.appendChild(el);
         }
         tambah('diskon', nilai);
+        tambah('qs', '<?= $qs_filter; ?>');
+        tambah('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+
+    // Isi no. HP wali supaya tombol WA mengirim langsung ke kontak yang benar.
+    function isiHpWa(id, nama) {
+        var nilai = prompt('No. HP/WhatsApp wali ' + nama + ':\n(contoh: 081234567890)', '');
+        if (nilai === null) return;
+        nilai = String(nilai).replace(/\D/g, '');
+        if (nilai.length < 8 || nilai.length > 15) {
+            alert('No. HP harus 8-15 digit angka.');
+            return;
+        }
+
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?= site_url('tagihan/simpan_hp/'); ?>' + id;
+
+        function tambah(namaInput, isi) {
+            var el = document.createElement('input');
+            el.type = 'hidden'; el.name = namaInput; el.value = isi;
+            form.appendChild(el);
+        }
+        tambah('hp', nilai);
         tambah('qs', '<?= $qs_filter; ?>');
         tambah('<?= $this->security->get_csrf_token_name(); ?>', '<?= $this->security->get_csrf_hash(); ?>');
 
