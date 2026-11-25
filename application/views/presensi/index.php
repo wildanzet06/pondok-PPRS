@@ -112,17 +112,23 @@ $unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
                             <input type="date" name="tanggal" class="form-control" value="<?= html_escape($tanggal); ?>"
                                    max="<?= date('Y-m-d'); ?>" required>
                         </div>
-                        <div class="form-group col-6 col-md-2">
-                            <label>Jam ke-</label>
-                            <select name="jam" class="form-control">
-                                <?php for ($j = 1; $j <= $maks_jam; $j++): ?>
-                                    <option value="<?= $j; ?>" <?= ($jam == $j) ? 'selected' : ''; ?>><?= $j; ?></option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
+                        <?php if (!$tanpa_jam): ?>
+                            <div class="form-group col-6 col-md-2">
+                                <label>Jam ke-</label>
+                                <select name="jam" class="form-control">
+                                    <?php for ($j = 1; $j <= $maks_jam; $j++): ?>
+                                        <option value="<?= $j; ?>" <?= ($jam == $j) ? 'selected' : ''; ?>><?= $j; ?></option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                        <?php else: ?>
+                            <div class="form-group col-12 col-md-4 text-muted small mb-2">
+                                <i class="fas fa-info-circle mr-1"></i> Presensi TPQ cukup sekali per hari (tanpa jam pelajaran).
+                            </div>
+                        <?php endif; ?>
                     </form>
 
-                    <?php if (!empty($sesi_hari)): ?>
+                    <?php if (!empty($sesi_hari) && !$tanpa_jam): ?>
                         <div class="mt-1">
                             <small class="text-muted">Sesi yang sudah tercatat pada tanggal ini:</small>
                             <?php foreach ($sesi_hari as $sh): ?>
@@ -146,7 +152,8 @@ $unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">
-                            Kelas <b><?= html_escape($nama_kelas); ?></b> &middot; <?= $tgl_label; ?> &middot; Jam ke-<?= (int) $jam; ?>
+                            Kelas <b><?= html_escape($nama_kelas); ?></b> &middot; <?= $tgl_label; ?>
+                            <?php if (!$tanpa_jam): ?> &middot; Jam ke-<?= (int) $jam; ?><?php endif; ?>
                             <?php if ($sesi): ?><span class="badge badge-success ml-2">sudah pernah disimpan</span><?php endif; ?>
                         </h3>
                     </div>
@@ -248,7 +255,8 @@ $unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
                 <div class="alert alert-warning">Kelas ini belum memiliki siswa pada tahun pelajaran dan semester aktif.</div>
             <?php else: ?>
                 <div class="callout callout-info">
-                    Pilih <b>kelas</b>, <b>tanggal</b>, dan <b>jam pelajaran</b>, — daftar siswa langsung tampil.
+                    Pilih <b>kelas</b> dan <b>tanggal</b><?php if (!$tanpa_jam): ?>, serta <b>jam pelajaran</b><?php endif; ?>,
+                    — daftar siswa langsung tampil.
                 </div>
             <?php endif; ?>
 

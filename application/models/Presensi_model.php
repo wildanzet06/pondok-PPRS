@@ -303,6 +303,12 @@ class Presensi_model extends CI_Model {
     public function jam_maks($id_kelas, $id_tp, $id_smt, $fallback = 15) {
         $fallback = max(1, (int) $fallback);
         $id_kelas = (int) $id_kelas;
+
+        // TPQ tidak memakai jam pelajaran: satu presensi per hari.
+        $virtual = $this->kelas_virtual($id_kelas);
+        if ($virtual && $virtual->unit_key === 'tpq') {
+            return 1;
+        }
         if ($id_kelas < 1) return $fallback;
 
         $kbm = null;

@@ -115,11 +115,13 @@ class Presensi extends CI_Controller {
         $unit     = $this->_unit();
         $kelas_id = (int) $this->input->get('kelas');
         $tanggal  = (string) $this->input->get('tanggal');
-        $jam      = (int) $this->input->get('jam');
+        $tanpa_jam = ($unit === 'tpq');
+        $jam      = $tanpa_jam ? 1 : (int) $this->input->get('jam');
         if (!$this->_tanggal_valid($tanggal)) $tanggal = date('Y-m-d');
 
         // Jumlah jam mengikuti pengaturan jadwal kelas yang dipilih.
-        $maks_jam    = self::MAKS_JAM;
+        // TPQ cukup satu sesi per hari, jadi tidak memakai pilihan jam.
+        $maks_jam    = $tanpa_jam ? 1 : self::MAKS_JAM;
         $kelas_valid = false;
         if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt, $unit)) {
             $kelas_valid = true;
@@ -129,6 +131,7 @@ class Presensi extends CI_Controller {
 
         $data = $this->_admin_data('Presensi Kelas');
         $data['unit']          = $unit;
+        $data['tanpa_jam']     = $tanpa_jam;
         $data['unit_pilihan']  = function_exists('unit_pilihan') ? unit_pilihan() : array(1 => 'MTs', 2 => 'Madin', 3 => 'TPQ');
         $data['daftar_kelas']  = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt, $unit);
         $data['status_ref']    = $this->Presensi_model->status;
@@ -168,12 +171,14 @@ class Presensi extends CI_Controller {
         $unit     = $this->_unit('post');
         $kelas_id = (int) $this->input->post('kelas');
         $tanggal  = (string) $this->input->post('tanggal');
-        $jam      = (int) $this->input->post('jam');
+        $tanpa_jam = ($unit === 'tpq');
+        $jam      = $tanpa_jam ? 1 : (int) $this->input->post('jam');
         $mapel_id = (int) $this->input->post('mapel_id');
         $mapel_tx = trim((string) $this->input->post('mapel_nama'));
 
         $balik = $this->_url('presensi', array(
-            'unit' => $unit, 'kelas' => $kelas_id, 'tanggal' => $tanggal, 'jam' => $jam
+            'unit' => $unit, 'kelas' => $kelas_id, 'tanggal' => $tanggal,
+            'jam' => $tanpa_jam ? null : $jam
         ));
 
         if (!$this->_tanggal_valid($tanggal)) {
@@ -260,9 +265,11 @@ class Presensi extends CI_Controller {
         if ($sesi) {
             $this->Presensi_model->hapus_sesi($sesi->id);
             $this->session->set_flashdata('success', 'Presensi sesi tersebut dihapus.');
+            $unit_sesi = $this->Presensi_model->unit_kelas($sesi->id_kelas);
             redirect($this->_url('presensi', array(
                 'unit' => $unit, 'kelas' => $sesi->id_kelas,
-                'tanggal' => $sesi->tanggal, 'jam' => $sesi->jam_ke
+                'tanggal' => $sesi->tanggal,
+                'jam' => $unit_sesi === 'tpq' ? null : $sesi->jam_ke
             )));
             return;
         }

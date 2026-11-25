@@ -325,6 +325,11 @@ class Akun extends CI_Controller {
         $data['riwayat']      = $siswa ? $this->Presensi_model->riwayat_siswa($siswa->id_siswa, $dari, $sampai) : array();
         $data['hitung']       = $this->Presensi_model->hitung($data['riwayat']);
 
+        // Santri TPQ murni melihat kehadiran tanpa kolom jam pelajaran.
+        $unit_siswa = $siswa ? unit_siswa_unit_ids_by_id($siswa->id_siswa) : array();
+        $data['tanpa_jam'] = (count($unit_siswa) === 1
+            && in_array((int) unit_id_tpq(), $unit_siswa, true));
+
         $this->load->view('members/siswa/templates/header', $data);
         $this->load->view('akun/kehadiran', $data);
         $this->load->view('members/siswa/templates/footer');

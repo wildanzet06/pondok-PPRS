@@ -1,5 +1,7 @@
 <?php
 $warna = array('H' => 'success', 'I' => 'info', 'S' => 'warning', 'A' => 'danger');
+$tanpa_jam = ($unit === 'tpq');
+$kolom = $tanpa_jam ? 4 : 5;
 ?>
 <div class="content-wrapper">
     <section class="content-header">
@@ -53,20 +55,24 @@ $warna = array('H' => 'success', 'I' => 'info', 'S' => 'warning', 'A' => 'danger
                 <div class="card-body table-responsive">
                     <table class="table table-bordered table-striped table-sm">
                         <thead>
-                            <tr><th>Tanggal</th><th>Jam ke-</th><th>Mata Pelajaran</th><th>Status</th><th>Keterangan</th></tr>
+                            <tr>
+                                <th>Tanggal</th>
+                                <?php if (!$tanpa_jam): ?><th>Jam ke-</th><?php endif; ?>
+                                <th>Mata Pelajaran</th><th>Status</th><th>Keterangan</th>
+                            </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($riwayat as $r): ?>
                                 <tr>
                                     <td><?= date('d/m/Y', strtotime($r->tanggal)); ?></td>
-                                    <td><?= (int) $r->jam_ke; ?></td>
+                                    <?php if (!$tanpa_jam): ?><td><?= (int) $r->jam_ke; ?></td><?php endif; ?>
                                     <td><?= html_escape($r->mapel_nama); ?></td>
                                     <td><span class="badge badge-<?= $warna[$r->status]; ?>"><?= $status_ref[$r->status]; ?></span></td>
                                     <td><?= html_escape($r->keterangan); ?></td>
                                 </tr>
                             <?php endforeach; ?>
                             <?php if (empty($riwayat)): ?>
-                                <tr><td colspan="5" class="text-center text-muted">Belum ada catatan presensi pada bulan ini.</td></tr>
+                                <tr><td colspan="<?= (int) $kolom; ?>" class="text-center text-muted">Belum ada catatan presensi pada bulan ini.</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>

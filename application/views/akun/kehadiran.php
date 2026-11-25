@@ -58,7 +58,9 @@ $hari  = array('Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu');
                                             <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
                                                 <div style="min-width:0">
                                                     <div><b><?= $hari[(int) date('w', $ts)] . ', ' . date('d/m/Y', $ts); ?></b>
-                                                        <span class="text-muted">&middot; Jam ke-<?= (int) $r->jam_ke; ?></span></div>
+                                                        <?php if (empty($tanpa_jam)): ?>
+                                                            <span class="text-muted">&middot; Jam ke-<?= (int) $r->jam_ke; ?></span>
+                                                        <?php endif; ?></div>
                                                     <?php if ($r->mapel_nama): ?>
                                                         <div class="small text-muted text-truncate"><?= html_escape($r->mapel_nama); ?></div>
                                                     <?php endif; ?>
