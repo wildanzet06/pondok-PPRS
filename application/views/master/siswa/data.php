@@ -18,6 +18,8 @@
         border-top: 1px solid #dee2e6;
     }
     .jilid-group:first-child td { border-top: 0; }
+    #baris-jilid { display: none; align-items: center; }
+    #baris-jilid.tpq { display: flex; }
 </style><div class="content-wrapper bg-white pt-4">
     <section class="content-header">
         <div class="container-fluid">
@@ -50,8 +52,8 @@
                         Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
                         Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
                         tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa
-                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid. Di tab TPQ, tombol
-                        <b>Atur Nama Jilid</b> mengubah labelnya dan filter <b>Jilid</b> menampilkan satu kelompok saja.
+                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid. Hanya di tab TPQ, tombol
+                        <b>setting</b> mengubah label jilid dan filter <b>Jilid</b> menampilkan satu kelompok saja.
                     </div>
                     <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
@@ -126,14 +128,15 @@
                                         <option value="4">Keluar</option>
                                     </select>
                                 </div>
-                                <div class="d-flex flex-row align-items-center d-none" id="baris-jilid">
+                                <div class="align-items-center" id="baris-jilid">
                                     <span>Jilid </span>
                                     <select id="jilid-filter" class="ml-2 form-control form-control-sm">
                                         <option value="">Semua Jilid</option>
                                     </select>
                                     <button type="button" id="atur-jilid"
-                                            class="btn btn-sm btn-outline-primary ml-2">
-                                        <i class="fas fa-tag mr-1"></i>Atur Nama Jilid
+                                            class="btn btn-sm btn-outline-primary ml-2"
+                                            title="Atur nama jilid TPQ">
+                                        <i class="fas fa-cog mr-1"></i>setting
                                     </button>
                                 </div>
                             </div>
@@ -469,7 +472,7 @@
             if (unitAktif !== 'mts' && $('#users-filter').val() === '5') {
                 $('#users-filter').val('1');
             }
-            $('#baris-jilid').toggleClass('d-none', unitAktif !== 'tpq');
+            $('#baris-jilid').toggleClass('tpq', unitAktif === 'tpq');
             if (unitAktif === 'tpq') {
                 muatJilid(jilidAktif);
             }
