@@ -21,11 +21,16 @@
             @mkdir("./uploads/settings/", 0755, TRUE);
         }
 
+        // Jangan biarkan perbedaan MIME/ekstensi (mis. WebP bernama .png)
+        // menggagalkan unggahan. File tetap diverifikasi sebagai gambar asli
+        // di bawah, lalu diganti namanya sesuai format sebenarnya.
         $config = array(
             "upload_path"   => "./uploads/settings/",
-            "allowed_types" => "gif|jpg|jpeg|png",
-            "overwrite"     => TRUE,
-            "file_name"     => $jenis
+            "allowed_types" => "*",
+            "detect_mime"   => FALSE,
+            "max_size"      => 5120,
+            "overwrite"     => FALSE,
+            "file_name"     => $jenis . "_" . date("Ymd_His") . "_" . substr(md5(uniqid("", true)), 0, 6)
         );
 
         $this->load->library("upload");
@@ -40,7 +45,59 @@
         }
 
         $file = $this->upload->data();
-        $path = "uploads/settings/" . $file["file_name"];
+        $full = $file["full_path"];
+        $info = @getimagesize($full);
+
+        if (!$info || empty($info["mime"])) {
+            @unlink($full);
+            return $this->output_json(array(
+                "status" => false,
+                "src"    => "",
+                "error"  => "File bukan gambar yang valid. Gunakan PNG, JPG, JPEG, atau WebP."
+            ));
+        }
+
+        $peta_ext = array(
+            "image/png"      => "png",
+            "image/jpeg"     => "jpg",
+            "image/gif"      => "gif",
+            "image/webp"     => "webp",
+            "image/bmp"      => "bmp",
+            "image/x-ms-bmp" => "bmp"
+        );
+        $ext = isset($peta_ext[$info["mime"]]) ? $peta_ext[$info["mime"]] : "";
+        if ($ext === "") {
+            @unlink($full);
+            return $this->output_json(array(
+                "status" => false,
+                "src"    => "",
+                "error"  => "Format gambar " . html_escape($info["mime"]) . " tidak didukung. Gunakan PNG, JPG, atau WebP."
+            ));
+        }
+
+        // Samakan ekstensi file dengan format gambar yang sebenarnya.
+        $nama = pathinfo($file["file_name"], PATHINFO_FILENAME) . "." . $ext;
+        $tujuan = $file["file_path"] . $nama;
+        if ($tujuan !== $full && !@rename($full, $tujuan)) {
+            @unlink($full);
+            return $this->output_json(array(
+                "status" => false,
+                "src"    => "",
+                "error"  => "Gagal menyimpan file gambar."
+            ));
+        }
+
+        $path = "uploads/settings/" . $nama;
+
+        // Hapus file logo lama agar folder tidak menumpuk.
+        $row  = $this->db->select($kolom)->where("id_setting", 1)->get("setting")->row();
+        $lama = $row && isset($row->{$kolom}) ? (string) $row->{$kolom} : "";
+        if ($lama !== "" && strpos($lama, "uploads/settings/") === 0 && $lama !== $path) {
+            $file_lama = "./" . $lama;
+            if (is_file($file_lama)) {
+                @unlink($file_lama);
+            }
+        }
 
         $this->db->where("id_setting", 1)->update("setting", array($kolom => $path));
 

@@ -152,7 +152,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                             <div class="form-group pb-2">
                                 <label for="logo-kiri">Tandatangan</label>
                                 <input type="file" id="tanda-tangan" name="logo" class="dropify"
-                                       data-max-file-size-preview="2M" data-allowed-file-extensions="jpg jpeg png"
+                                       data-max-file-size-preview="2M" data-allowed-file-extensions="jpg jpeg png webp"
                                        data-default-file="<?= base_url() . $setting->tanda_tangan ?>"/>
                             </div>
                             <?= form_close() ?>
@@ -163,9 +163,9 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                                 <label for="logo-kiri">Logo Kiri / Logo Aplikasi</label>
                                 <input type="file" id="logo-kiri" name="logo" class="dropify"
                                        data-max-file-size-preview="2M"
-                                       data-allowed-file-extensions="jpg jpeg png"
+                                       data-allowed-file-extensions="jpg jpeg png webp"
                                        data-default-file="<?= base_url() . $setting->logo_kiri ?>"/>
-                                <small class="text-muted">Logo langsung tersimpan setelah dipilih. Jika tampilan belum berubah, refresh halaman.</small>
+                                <small class="text-muted">Logo langsung tersimpan setelah dipilih (PNG, JPG/JPEG, atau WebP; SVG belum didukung). Jika tampilan belum berubah, refresh halaman.</small>
                             </div>
                             <?= form_close() ?>
                         </div>
@@ -175,7 +175,7 @@ $satuan = ["1" => ["SD", "MI"], "2" => ["SMP", "MTS"], "3" => ["SMA", "MA", "SMK
                                 <label for="logo-kanan">Logo Kanan</label>
                                 <input type="file" id="logo-kanan" name="logo" class="dropify"
                                        data-max-file-size-preview="2M"
-                                       data-allowed-file-extensions="jpg jpeg png"
+                                       data-allowed-file-extensions="jpg jpeg png webp"
                                        data-default-file="<?= base_url() . $setting->logo_kanan ?>"/>
                             </div>
                             <?= form_close() ?>
