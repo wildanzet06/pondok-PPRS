@@ -4,7 +4,163 @@
     |    https://github.com/garudacbt/cbt    |
     |________________________________________|
 */
- defined("\x42\101\123\x45\120\x41\124\110") or exit("\116\x6f\x20\x64\151\162\x65\143\164\40\x73\x63\x72\x69\160\x74\x20\x61\x63\x63\x65\163\x73\40\x61\x6c\x6c\157\167\145\144"); class Datasiswa extends CI_Controller { public function __construct() { goto B4Qjt; os9Qo: redirect("\x61\x75\x74\150"); goto YtCIK; qrTmX: goto RNLUS; goto ow4Lx; B4Qjt: parent::__construct(); $this->load->helper("skema"); skema_tambahan_pastikan($this->db); goto fRwYc; ow4Lx: uc8OG: goto os9Qo; tIUaL: $this->form_validation->set_error_delimiters('', ''); goto hhfSg; ireyn: if (!(!$this->ion_auth->is_admin() && !$this->ion_auth->in_group("\147\x75\162\165"))) { goto P5fmt; } goto yqynH; YtCIK: RNLUS: goto KHhaf; tkg0x: P5fmt: goto qrTmX; JDMcn: $this->load->library(["\144\141\164\x61\x74\141\142\154\145\163", "\146\x6f\x72\155\137\166\x61\x6c\151\144\141\164\151\x6f\156"]); goto tIUaL; fRwYc: if (!$this->ion_auth->logged_in()) { goto uc8OG; } goto ireyn; yqynH: show_error("\110\x61\156\x79\x61\40\101\x64\x6d\151\156\151\x73\x74\x72\141\x74\157\x72\x20\171\x61\x6e\147\40\x64\x69\x62\x65\162\x69\40\150\141\x6b\x20\165\156\164\165\x6b\x20\155\145\x6e\x67\141\153\x73\145\x73\40\x68\141\154\141\x6d\x61\x6e\40\x69\x6e\x69\x2c\x20\74\x61\40\150\x72\x65\146\75\42" . base_url("\x64\x61\x73\x68\142\x6f\141\x72\x64") . "\42\x3e\x4b\x65\x6d\x62\x61\154\151\x20\153\145\40\155\x65\x6e\165\x20\141\x77\x61\x6c\x3c\57\x61\x3e", 403, "\x41\153\x73\145\x73\40\x54\x65\162\x6c\141\x72\x61\156\147"); goto tkg0x; KHhaf: $this->load->library("\165\160\x6c\x6f\x61\x64"); goto JDMcn; hhfSg: } public function output_json($data, $encode = true) { goto hv_fp; g1SZS: $data = json_encode($data); goto YdK95; YdK95: VNfWd: goto mH_Tk; hv_fp: if (!$encode) { goto VNfWd; } goto g1SZS; mH_Tk: $this->output->set_content_type("\x61\x70\160\154\x69\143\x61\x74\x69\157\x6e\x2f\x6a\x73\157\x6e")->set_output($data); goto X1P2W; X1P2W: } public function index() { goto P1ooh; hQWLZ: $this->load->view("\x5f\x74\145\155\x70\x6c\141\164\145\163\x2f\144\x61\163\150\142\157\141\162\x64\57\137\150\145\x61\144\145\162", $data); goto EwuVw; ju73U: $data["\160\162\157\x66\151\x6c\145"] = $this->dashboard->getProfileAdmin($user->id); goto u9gt6; xicfP: $searchTp = array_search("\x31", array_column($tp, "\141\x63\164\x69\x76\145")); goto qvfJv; CmJeP: $tpAktif = $tp[$searchTp]; goto AtMUu; o7hiR: $smt = $this->dashboard->getSemester(); goto LBEpW; LBEpW: $data["\x74\x70"] = $tp; goto SKbxY; sqY_1: $this->load->model("\104\x72\157\160\x64\x6f\x77\156\137\155\157\144\x65\x6c", "\144\162\x6f\x70\x64\157\167\x6e"); goto VojnC; EwuVw: $this->load->view("\155\141\x73\164\145\x72\x2f\163\x69\163\x77\141\57\x64\x61\x74\141"); goto du0_D; l7PBl: $data = ["\165\x73\x65\162" => $user, "\152\x75\144\165\x6c" => "\123\151\x73\x77\141", "\x73\x75\x62\x6a\x75\144\165\154" => "\x44\141\x74\x61\40\123\151\163\x77\x61", "\163\x65\x74\164\151\156\x67" => $this->dashboard->getSetting()]; goto CEYm5; du0_D: $this->load->view("\137\x74\x65\x6d\x70\154\141\164\x65\163\57\x64\x61\163\x68\142\157\x61\x72\144\x2f\137\x66\x6f\x6f\164\145\x72"); goto qNARX; CEYm5: $tp = $this->dashboard->getTahun(); goto o7hiR; NieOh: $data["\164\x70\x5f\x61\143\x74\x69\x76\x65"] = $tpAktif; goto t0Rm9; VojnC: $user = $this->ion_auth->user()->row(); goto l7PBl; SKbxY: $data["\x73\155\164"] = $smt; goto xicfP; AtMUu: $smtAktif = $smt[$searchSmt]; goto NieOh; t0Rm9: $data["\x73\155\x74\x5f\141\143\164\x69\166\x65"] = $smtAktif; goto ju73U; u9gt6: $data["\x6b\145\154\x61\163\x73"] = $this->dropdown->getAllKelas($tpAktif->id_tp, $smtAktif->id_smt); goto hQWLZ; P1ooh: $this->load->model("\104\x61\x73\x68\x62\x6f\x61\x72\144\137\155\x6f\144\145\154", "\144\x61\x73\150\142\x6f\x61\162\x64"); goto sqY_1; qvfJv: $searchSmt = array_search("\61", array_column($smt, "\141\143\x74\x69\x76\145")); goto CmJeP; qNARX: } public function data() { goto sxoyf; YChGJ: $smt = $this->dashboard->getSemesterActive(); goto YYJU5; YKo6x: $tp = $this->dashboard->getTahunActive(); goto YChGJ; VTok5: $this->load->model("\x44\141\163\150\142\157\141\x72\144\x5f\155\x6f\x64\145\x6c", "\x64\x61\163\x68\142\x6f\x61\162\x64"); goto YKo6x; sxoyf: $this->load->model("\115\141\x73\x74\x65\x72\x5f\155\x6f\x64\145\154", "\155\x61\163\164\x65\x72"); goto VTok5; YYJU5: $this->output_json($this->master->getDataSiswa($tp->id_tp, $smt->id_smt), false); goto KH2Uo; KH2Uo: } public function list() { goto KZGci; J4rlV: $this->output_json($data); goto JpBPU; H7z2v: $tp = $this->dashboard->getTahunActive(); goto dOquE; GeZ2e: $this->load->model("\x44\x61\x73\x68\142\x6f\141\162\x64\x5f\155\157\x64\145\154", "\x64\141\x73\x68\x62\157\141\x72\144"); goto yqZll; ktJ01: $offset = ($page - 1) * $limit; goto H7z2v; ImLwm: $lists = $this->master->getSiswaPage($tp->id_tp, $smt->id_smt, $offset, $limit, $filter, $search); goto lJ9rQ; dOquE: $smt = $this->dashboard->getSemesterActive(); goto ZiYzy; ZiYzy: $count_siswa = $this->master->getSiswaTotalPage($tp->id_tp, $smt->id_smt, $filter, $search); goto ImLwm; LKYLk: $filter = $this->input->post("\x66\x69\x6c\x74\145\162", true); goto ktJ01; rXqnH: $search = $this->input->post("\x73\145\141\162\143\x68", true); goto LKYLk; yqZll: $page = $this->input->post("\160\x61\147\x65", true); goto gP9hd; lJ9rQ: $data = ["\x6c\x69\163\x74\163" => $lists, "\x74\157\164\141\x6c" => $count_siswa, "\160\x61\x67\145\x73" => ceil($count_siswa / $limit), "\x73\x65\141\x72\x63\150" => $search, "\160\145\x72\160\141\x67\x65" => $limit, "\146\151\154\x74\145\162" => $filter]; goto J4rlV; KZGci: $this->load->model("\x4d\x61\x73\164\x65\162\137\155\x6f\144\145\154", "\x6d\141\x73\x74\x65\162"); goto GeZ2e; gP9hd: $limit = $this->input->post("\x6c\151\155\151\164", true); goto rXqnH; JpBPU: } public function add() { goto I3QZV; Em_b0: $data["\x74\160"] = $this->dashboard->getTahun(); goto K11Y1; XUVS7: $this->load->view("\137\x74\145\155\160\x6c\141\x74\145\x73\57\x64\x61\163\150\142\157\141\x72\144\x2f\x5f\x66\x6f\157\x74\x65\162"); goto eSyfc; I3QZV: $this->load->model("\104\141\x73\150\x62\x6f\x61\162\144\137\x6d\157\x64\x65\x6c", "\144\x61\163\x68\142\157\141\162\x64"); goto hH9od; sTvQu: $data["\160\x72\x6f\146\151\x6c\145"] = $this->dashboard->getProfileAdmin($user->id); goto glDL6; N2Ypr: $this->load->view("\x5f\x74\x65\x6d\160\x6c\141\x74\x65\163\x2f\x64\x61\163\150\142\x6f\141\162\x64\57\x5f\x68\x65\x61\x64\145\x72", $data); goto SBFTP; SBFTP: $this->load->view("\x6d\x61\x73\x74\145\x72\x2f\163\151\x73\x77\x61\x2f\141\x64\x64"); goto XUVS7; glDL6: $data["\x74\x69\160\145"] = "\141\x64\x64"; goto N2Ypr; hH9od: $user = $this->ion_auth->user()->row(); goto wLdd1; wLdd1: $data = ["\165\163\145\x72" => $user, "\x6a\165\144\x75\x6c" => "\x53\x69\x73\167\x61", "\x73\x75\142\152\x75\144\x75\x6c" => "\124\x61\x6d\x62\141\150\x20\x44\141\x74\x61\40\x53\x69\x73\x77\141", "\x73\145\x74\x74\x69\156\147" => $this->dashboard->getSetting()]; goto Em_b0; K11Y1: $data["\164\160\x5f\x61\143\x74\x69\166\145"] = $this->dashboard->getTahunActive(); goto VnQnn; VnQnn: $data["\x73\155\164"] = $this->dashboard->getSemester(); goto i4Zfu; i4Zfu: $data["\163\155\x74\x5f\x61\143\x74\x69\166\x65"] = $this->dashboard->getSemesterActive(); goto sTvQu; eSyfc: } public function create()
+ defined("\x42\101\123\x45\120\x41\124\110") or exit("\116\x6f\x20\x64\151\162\x65\143\164\40\x73\x63\x72\x69\160\x74\x20\x61\x63\x63\x65\163\x73\40\x61\x6c\x6c\157\167\145\144"); class Datasiswa extends CI_Controller { public function __construct() { goto B4Qjt; os9Qo: redirect("\x61\x75\x74\150"); goto YtCIK; qrTmX: goto RNLUS; goto ow4Lx; B4Qjt: parent::__construct(); $this->load->helper("skema"); skema_tambahan_pastikan($this->db); goto fRwYc; ow4Lx: uc8OG: goto os9Qo; tIUaL: $this->form_validation->set_error_delimiters('', ''); goto hhfSg; ireyn: if (!(!$this->ion_auth->is_admin() && !$this->ion_auth->in_group("\147\x75\162\165"))) { goto P5fmt; } goto yqynH; YtCIK: RNLUS: goto KHhaf; tkg0x: P5fmt: goto qrTmX; JDMcn: $this->load->library(["\144\141\164\x61\x74\141\142\154\145\163", "\146\x6f\x72\155\137\166\x61\x6c\151\144\141\164\151\x6f\156"]); goto tIUaL; fRwYc: if (!$this->ion_auth->logged_in()) { goto uc8OG; } goto ireyn; yqynH: show_error("\110\x61\156\x79\x61\40\101\x64\x6d\151\156\151\x73\x74\x72\141\x74\157\x72\x20\171\x61\x6e\147\40\x64\x69\x62\x65\162\x69\40\150\141\x6b\x20\165\156\164\165\x6b\x20\155\145\x6e\x67\141\153\x73\145\x73\40\x68\141\154\141\x6d\x61\x6e\40\x69\x6e\x69\x2c\x20\74\x61\40\150\x72\x65\146\75\42" . base_url("\x64\x61\x73\x68\142\x6f\141\x72\x64") . "\42\x3e\x4b\x65\x6d\x62\x61\154\151\x20\153\145\40\155\x65\x6e\165\x20\141\x77\x61\x6c\x3c\57\x61\x3e", 403, "\x41\153\x73\145\x73\40\x54\x65\162\x6c\141\x72\x61\156\147"); goto tkg0x; KHhaf: $this->load->library("\165\160\x6c\x6f\x61\x64"); goto JDMcn; hhfSg: } public function output_json($data, $encode = true) { goto hv_fp; g1SZS: $data = json_encode($data); goto YdK95; YdK95: VNfWd: goto mH_Tk; hv_fp: if (!$encode) { goto VNfWd; } goto g1SZS; mH_Tk: $this->output->set_content_type("\x61\x70\160\154\x69\143\x61\x74\x69\157\x6e\x2f\x6a\x73\157\x6e")->set_output($data); goto X1P2W; X1P2W: } public function index() { goto P1ooh; hQWLZ: $this->load->view("\x5f\x74\145\155\x70\x6c\141\164\145\163\x2f\144\x61\163\150\142\157\141\162\x64\57\137\150\145\x61\144\145\162", $data); goto EwuVw; ju73U: $data["\160\162\157\x66\151\x6c\145"] = $this->dashboard->getProfileAdmin($user->id); goto u9gt6; xicfP: $searchTp = array_search("\x31", array_column($tp, "\141\x63\164\x69\x76\145")); goto qvfJv; CmJeP: $tpAktif = $tp[$searchTp]; goto AtMUu; o7hiR: $smt = $this->dashboard->getSemester(); goto LBEpW; LBEpW: $data["\x74\x70"] = $tp; goto SKbxY; sqY_1: $this->load->model("\104\x72\157\160\x64\x6f\x77\156\137\155\157\144\x65\x6c", "\144\162\x6f\x70\x64\157\167\x6e"); goto VojnC; EwuVw: $this->load->view("\155\141\x73\164\145\x72\x2f\163\x69\163\x77\141\57\x64\x61\x74\141"); goto du0_D; l7PBl: $data = ["\165\x73\x65\162" => $user, "\152\x75\144\165\x6c" => "\123\151\x73\x77\141", "\x73\x75\x62\x6a\x75\144\165\154" => "\x44\141\x74\x61\40\123\151\163\x77\x61", "\163\x65\x74\164\151\156\x67" => $this->dashboard->getSetting()]; goto CEYm5; du0_D: $this->load->view("\137\x74\x65\x6d\x70\154\141\164\x65\163\57\x64\x61\163\x68\142\157\x61\x72\144\x2f\137\x66\x6f\x6f\164\145\x72"); goto qNARX; CEYm5: $tp = $this->dashboard->getTahun(); goto o7hiR; NieOh: $data["\164\x70\x5f\x61\143\x74\x69\x76\x65"] = $tpAktif; goto t0Rm9; VojnC: $user = $this->ion_auth->user()->row(); goto l7PBl; SKbxY: $data["\x73\155\164"] = $smt; goto xicfP; AtMUu: $smtAktif = $smt[$searchSmt]; goto NieOh; t0Rm9: $data["\x73\155\x74\x5f\141\143\164\x69\166\x65"] = $smtAktif; goto ju73U; u9gt6: $data["\x6b\145\154\x61\163\x73"] = $this->dropdown->getAllKelas($tpAktif->id_tp, $smtAktif->id_smt); goto hQWLZ; P1ooh: $this->load->model("\104\x61\x73\x68\x62\x6f\x61\x72\144\137\155\x6f\144\145\154", "\144\x61\x73\150\142\x6f\x61\162\x64"); goto sqY_1; qvfJv: $searchSmt = array_search("\61", array_column($smt, "\141\143\x74\x69\x76\145")); goto CmJeP; qNARX: } public function data() { goto sxoyf; YChGJ: $smt = $this->dashboard->getSemesterActive(); goto YYJU5; YKo6x: $tp = $this->dashboard->getTahunActive(); goto YChGJ; VTok5: $this->load->model("\x44\141\163\150\142\157\141\x72\144\x5f\155\x6f\x64\145\x6c", "\x64\x61\163\x68\142\x6f\x61\162\x64"); goto YKo6x; sxoyf: $this->load->model("\115\141\x73\x74\x65\x72\x5f\155\x6f\x64\145\154", "\155\x61\163\164\x65\x72"); goto VTok5; YYJU5: $this->output_json($this->master->getDataSiswa($tp->id_tp, $smt->id_smt), false); goto KH2Uo; KH2Uo: }
+public function list()
+{
+    $this->load->model('Dashboard_model', 'dashboard');
+
+    $limit = (int) $this->input->post('limit', true);
+    if ($limit <= 0) {
+        $limit = 10;
+    }
+    $page = (int) $this->input->post('page', true);
+    if ($page <= 0) {
+        $page = 1;
+    }
+    $offset = ($page - 1) * $limit;
+
+    $filter = (string) $this->input->post('filter', true);
+    $search = $this->input->post('search', true);
+    $unit = (string) $this->input->post('unit', true);
+    if (!in_array($unit, array('mts', 'madin', 'tpq'), true)) {
+        $unit = 'mts';
+    }
+
+    $tp = $this->dashboard->getTahunActive();
+    $smt = $this->dashboard->getSemesterActive();
+
+    $id_mts = function_exists('unit_id_mts') ? (int) unit_id_mts() : 1;
+    $id_madin = function_exists('unit_id_madin') ? (int) unit_id_madin() : 2;
+    $id_tpq = function_exists('unit_id_tpq') ? (int) unit_id_tpq() : 3;
+
+    $status = in_array($filter, array('3', '4'), true) ? (int) $filter : 1;
+    $ada_jilid = $this->db->field_exists('jilid', 'master_siswa_unit');
+
+    $select = 'a.id_siswa, a.foto, a.nama, a.nis, a.nisn, a.jenis_kelamin, '
+        . 'd.id_kelas, f.nama_kelas, '
+        . '(SELECT COUNT(id) FROM users WHERE users.username = a.username) AS aktif, '
+        . '(SELECT GROUP_CONCAT(su.unit_id ORDER BY su.unit_id) FROM master_siswa_unit su '
+        . 'WHERE su.siswa_id = a.id_siswa AND su.status = 1) AS unit_ids';
+    if ($ada_jilid) {
+        $select .= ', (SELECT su2.jilid FROM master_siswa_unit su2 '
+            . 'WHERE su2.siswa_id = a.id_siswa AND su2.unit_id = ' . $id_tpq
+            . ' AND su2.status = 1 LIMIT 1) AS jilid';
+    } else {
+        $select .= ', NULL AS jilid';
+    }
+
+    $bangun = function ($hitung) use (
+        $tp, $smt, $status, $filter, $unit, $search,
+        $id_mts, $id_madin, $id_tpq, $ada_jilid, $select, $limit, $offset
+    ) {
+        if ($hitung) {
+            $this->db->select('a.id_siswa');
+        } else {
+            $this->db->select($select, false);
+        }
+        $this->db->from('master_siswa a');
+        $this->db->join(
+            'kelas_siswa d',
+            'd.id_siswa = a.id_siswa AND d.id_tp = ' . (int) $tp->id_tp . ' AND d.id_smt = ' . (int) $smt->id_smt,
+            'left'
+        );
+        $this->db->join('master_kelas f', 'f.id_kelas = d.id_kelas', 'left');
+        $this->db->join('buku_induk u', 'u.id_siswa = a.id_siswa AND u.status = ' . (int) $status);
+
+        // Rombel hanya relevan untuk MTs. Madin/TPQ tetap tampil walau tanpa kelas.
+        // Filter "Aktif" menampilkan semua murid aktif, termasuk yang belum
+        // punya rombel. Filter "Tanpa Kelas" menyaring yang belum berrombel.
+        if ($unit === 'mts' && $filter === '5') {
+            $this->db->where('f.id_kelas IS NULL', null, false);
+        }
+
+        if ($unit === 'mts') {
+            // MTs adalah unit utama. Murid tanpa baris unit (data lama) ikut MTs.
+            $this->db->where(
+                '(EXISTS (SELECT 1 FROM master_siswa_unit su_m WHERE su_m.siswa_id = a.id_siswa'
+                . ' AND su_m.unit_id = ' . $id_mts . ' AND su_m.status = 1)'
+                . ' OR NOT EXISTS (SELECT 1 FROM master_siswa_unit su_x WHERE su_x.siswa_id = a.id_siswa))',
+                null,
+                false
+            );
+        } else {
+            // Madin/TPQ hanya murid yang TIDAK punya MTs, agar murid dobel
+            // tidak tampil dua kali (mereka cukup ada di tab MTs dengan badge).
+            $id_unit = $unit === 'madin' ? $id_madin : $id_tpq;
+            $this->db->where(
+                'EXISTS (SELECT 1 FROM master_siswa_unit su_u WHERE su_u.siswa_id = a.id_siswa'
+                . ' AND su_u.unit_id = ' . $id_unit . ' AND su_u.status = 1)',
+                null,
+                false
+            );
+            $this->db->where(
+                'NOT EXISTS (SELECT 1 FROM master_siswa_unit su_m2 WHERE su_m2.siswa_id = a.id_siswa'
+                . ' AND su_m2.unit_id = ' . $id_mts . ' AND su_m2.status = 1)',
+                null,
+                false
+            );
+        }
+
+        if ($search !== null && $search !== '') {
+            $cari = $this->db->escape_like_str($search);
+            $this->db->where(
+                '(a.nama LIKE "%' . $cari . '%" OR a.nis LIKE "%' . $cari . '%" OR a.nisn LIKE "%' . $cari . '%")',
+                null,
+                false
+            );
+        }
+
+        if (!$hitung) {
+            $this->db->order_by('f.nama_kelas', 'ASC');
+            $this->db->order_by('a.nama', 'ASC');
+            $this->db->limit($limit, $offset);
+        }
+    };
+
+    $bangun(true);
+    $total = $this->db->count_all_results();
+
+    $bangun(false);
+    $lists = $this->db->get()->result_array();
+
+    $pilihan = function_exists('unit_pilihan') ? unit_pilihan() : array(1 => 'MTs', 2 => 'Madin', 3 => 'TPQ');
+    foreach ($lists as &$row) {
+        $ids = array();
+        foreach (explode(',', (string) $row['unit_ids']) as $uid) {
+            $uid = (int) $uid;
+            if ($uid > 0) {
+                $ids[$uid] = $uid;
+            }
+        }
+        if (!$ids) {
+            $ids[$id_mts] = $id_mts;
+        }
+        $label = array();
+        foreach ($ids as $uid) {
+            if (isset($pilihan[$uid])) {
+                $label[] = $pilihan[$uid];
+            }
+        }
+        $row['unit_ids'] = array_values($ids);
+        $row['unit_labels'] = $label;
+        $row['jilid'] = $row['jilid'] === null ? '' : (string) $row['jilid'];
+    }
+    unset($row);
+
+    $data = array(
+        'lists' => $lists,
+        'total' => $total,
+        'pages' => (int) ceil($total / $limit),
+        'search' => $search,
+        'perpage' => $limit,
+        'filter' => $filter,
+        'unit' => $unit,
+        'unit_labels' => $pilihan
+    );
+
+    return $this->output_json($data);
+}
+ public function add() { goto I3QZV; Em_b0: $data["\x74\160"] = $this->dashboard->getTahun(); goto K11Y1; XUVS7: $this->load->view("\137\x74\145\155\160\x6c\141\x74\145\x73\57\x64\x61\163\150\142\157\141\x72\144\x2f\x5f\x66\x6f\157\x74\x65\162"); goto eSyfc; I3QZV: $this->load->model("\104\141\x73\150\x62\x6f\x61\162\144\137\x6d\157\x64\x65\x6c", "\144\x61\163\x68\142\157\141\162\x64"); goto hH9od; sTvQu: $data["\160\x72\x6f\146\151\x6c\145"] = $this->dashboard->getProfileAdmin($user->id); goto glDL6; N2Ypr: $this->load->view("\x5f\x74\x65\x6d\160\x6c\141\x74\x65\163\x2f\x64\x61\163\150\142\x6f\141\162\x64\57\x5f\x68\x65\x61\x64\145\x72", $data); goto SBFTP; SBFTP: $this->load->view("\x6d\x61\x73\x74\145\x72\x2f\163\151\x73\x77\x61\x2f\141\x64\x64"); goto XUVS7; glDL6: $data["\x74\x69\160\145"] = "\141\x64\x64"; goto N2Ypr; hH9od: $user = $this->ion_auth->user()->row(); goto wLdd1; wLdd1: $data = ["\165\163\145\x72" => $user, "\x6a\165\144\x75\x6c" => "\x53\x69\x73\167\x61", "\x73\x75\142\152\x75\144\x75\x6c" => "\124\x61\x6d\x62\141\150\x20\x44\141\x74\x61\40\x53\x69\x73\x77\141", "\x73\145\x74\x74\x69\156\147" => $this->dashboard->getSetting()]; goto Em_b0; K11Y1: $data["\164\160\x5f\x61\143\x74\x69\166\145"] = $this->dashboard->getTahunActive(); goto VnQnn; VnQnn: $data["\x73\155\164"] = $this->dashboard->getSemester(); goto i4Zfu; i4Zfu: $data["\163\155\x74\x5f\x61\143\x74\x69\166\x65"] = $this->dashboard->getSemesterActive(); goto sTvQu; eSyfc: } public function create()
 {
     $this->load->model('Master_model', 'master');
 

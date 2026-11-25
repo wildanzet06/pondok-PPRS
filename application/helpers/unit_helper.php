@@ -100,6 +100,25 @@ if (!function_exists('unit_siswa_akses_penuh')) {
     }
 }
 
+if (!function_exists('unit_id_madin')) {
+    /** Id unit Madin dari tabel master_unit (fallback 2 untuk data lama). */
+    function unit_id_madin()
+    {
+        $CI =& get_instance();
+        static $id = null;
+        if ($id === null) {
+            $id = 2;
+            if ($CI->db->table_exists('master_unit')) {
+                $row = $CI->db->select('id_unit')->where('kode', 'madin')->get('master_unit')->row();
+                if ($row) {
+                    $id = (int) $row->id_unit;
+                }
+            }
+        }
+        return $id;
+    }
+}
+
 if (!function_exists('unit_id_mts')) {
     /** Id unit MTs dari tabel master_unit (fallback 1 untuk data lama). */
     function unit_id_mts()

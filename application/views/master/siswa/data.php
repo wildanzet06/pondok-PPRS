@@ -25,7 +25,7 @@
         <div class="container-fluid">
             <div class="card card-default my-shadow mb-4">
                 <div class="card-header">
-                    <h6 class="card-title"><?= $subjudul ?></h6>
+                    <h6 class="card-title">Daftar Siswa</h6>
                     <div class="card-tools siswa-tools">
                         <button type="button" data-toggle="modal" data-target="#createSiswaModal"
                                 class="btn btn-sm btn-primary">
@@ -40,9 +40,20 @@
                 <div class="card-body">
                     <div class="alert alert-light border small mb-3">
                         Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
-                        Centang lebih dari satu unit untuk murid dobel &mdash; tetap satu akun.
-                        Jilid TPQ juga diisi di form siswa. Halaman Unit Murid tetap tersedia sebagai fallback.
+                        Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
+                        tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa.
                     </div>
+                    <ul class="nav nav-tabs mb-3" id="siswaUnitTabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" data-unit="mts" role="tab">MTs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-unit="madin" role="tab">Madin</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" data-unit="tpq" role="tab">TPQ</a>
+                        </li>
+                    </ul>
                     <div class="dataTables_wrapper dt-bootstrap4 no-footer">
                         <div class="row">
                             <div class="col-sm-12 col-md-6">
@@ -101,14 +112,15 @@
                                 <?= form_open('datasiswa/delete', array('id' => 'bulk')); ?>
                                 <div class="table-responsive">
                                     <table id="table-siswa" class="w-100 table table-md table-striped table-bordered table-hover">
-                                        <thead>
+                                        <thead id="table-head">
                                         <tr>
                                             <th height="50" class="align-middle text-center p-0">
                                                 <input class="select_all" type="checkbox">
                                             </th>
                                             <th class="align-middle text-center p-0">No.</th>
-                                            <th class="align-middle">NAMA & KELAS</th>
+                                            <th class="align-middle">NAMA & UNIT</th>
                                             <th class="align-middle">NIS & NISN</th>
+                                            <th class="align-middle text-center">ROMBEL</th>
                                             <th class="align-middle text-center p-0">Aksi</th>
                                         </tr>
                                         </thead>
@@ -343,6 +355,7 @@
 <script>
     let currentPage = 1;
     let perPage = 10;
+    let unitAktif = 'mts';
     let $pagination, defaultOpts, query, actionBulk;
     let searchTimer = null;
     let siswaXhr = null;
@@ -355,8 +368,23 @@
 
     $(document).ready(function () {
         ajaxcsrf();
+        renderHeader();
         sinkronJilidSiswa();
         $('#formsiswa input.unit-siswa-checkbox').on('change', sinkronJilidSiswa);
+
+        $('#siswaUnitTabs a').on('click', function (e) {
+            e.preventDefault();
+            unitAktif = $(this).data('unit') || 'mts';
+            $('#siswaUnitTabs a').removeClass('active');
+            $(this).addClass('active');
+            $('#users-filter option[value="5"]').toggle(unitAktif === 'mts');
+            if (unitAktif !== 'mts' && $('#users-filter').val() === '5') {
+                $('#users-filter').val('1');
+            }
+            renderHeader();
+            currentPage = 1;
+            loadSiswa();
+        });
         $pagination = $('#pagination');
         defaultOpts = {
             visiblePages: 5,
@@ -410,7 +438,7 @@
             }
         });
 
-        $(".select_all").on("click", function () {
+        $(document).on("click", ".select_all", function () {
             if (this.checked) {
                 $(".check").each(function () {
                     this.checked = true;
@@ -559,6 +587,25 @@
         loadSiswa();
     });
 
+    function esc(v) {
+        return $('<div>').text(v == null ? '' : v).html();
+    }
+
+    function renderHeader() {
+        var head = '<tr>' +
+            '<th height="50" class="align-middle text-center p-0"><input class="select_all" type="checkbox"></th>' +
+            '<th class="align-middle text-center p-0">No.</th>' +
+            '<th class="align-middle">NAMA & UNIT</th>' +
+            '<th class="align-middle">NIS & NISN</th>';
+        if (unitAktif === 'mts') {
+            head += '<th class="align-middle text-center">ROMBEL</th>';
+        } else if (unitAktif === 'tpq') {
+            head += '<th class="align-middle text-center">JILID</th>';
+        }
+        head += '<th class="align-middle text-center p-0">Aksi</th></tr>';
+        $('#table-head').html(head);
+    }
+
     function loadSiswa(opsi) {
         var diam = !!(opsi && opsi.diam);
         $(".select_all").prop("checked", false);
@@ -569,7 +616,7 @@
         $('#search-loading').removeClass('d-none');
         var cari = query != null ? '&search=' + encodeURIComponent(query) : '';
         var filter = '&filter=' + $('#users-filter').val();
-        var dataPost = $('#pager').serialize() + cari + filter;
+        var dataPost = $('#pager').serialize() + cari + filter + '&unit=' + encodeURIComponent(unitAktif);
         console.log('post', dataPost);
         if (siswaXhr) {
             siswaXhr.abort();
@@ -611,31 +658,63 @@
         console.log(data);
         var html = '';
 
+        function badgeUnit(label) {
+            var warna = label === 'MTs' ? 'badge-primary'
+                : (label === 'Madin' ? 'badge-info' : 'badge-warning');
+            return '<span class="badge ' + warna + ' mr-1">' + esc(label) + '</span>';
+        }
+
         if (data.lists.length > 0) {
             $.each(data.lists, function (idx, siswa) {
-                const kls = siswa.nama_kelas != null ? '<span class="badge badge-info">'+siswa.nama_kelas+'</span>' : '';
-                const status = siswa.aktif == "0" ? '<span class="badge badge-danger">Nonaktif</span>' : '<span class="badge badge-success">Aktif</span>';
+                var labels = (siswa.unit_labels && siswa.unit_labels.length)
+                    ? siswa.unit_labels : ['MTs'];
+                var unitBadge = '';
+                $.each(labels, function (_, label) {
+                    unitBadge += badgeUnit(label);
+                });
+
+                var status = siswa.aktif == "0"
+                    ? '<span class="badge badge-danger">Nonaktif</span>'
+                    : '<span class="badge badge-success">Aktif</span>';
+
+                var kolomTambahan = '';
+                if (unitAktif === 'mts') {
+                    kolomTambahan = '<td class="align-middle text-center">' +
+                        (siswa.nama_kelas
+                            ? '<span class="badge badge-info">' + esc(siswa.nama_kelas) + '</span>'
+                            : '<span class="text-muted">-</span>') + '</td>';
+                } else if (unitAktif === 'tpq') {
+                    kolomTambahan = '<td class="align-middle text-center">' +
+                        (siswa.jilid !== '' && siswa.jilid != null
+                            ? 'Jilid ' + esc(siswa.jilid)
+                            : '<span class="text-muted">-</span>') + '</td>';
+                }
+
                 html += '<tr>' +
                     '   <td class="text-center align-middle">' +
-                    '       <input name="checked[]" class="check" value="'+siswa.id_siswa+'" type="checkbox">' +
+                    '       <input name="checked[]" class="check" value="' + esc(siswa.id_siswa) + '" type="checkbox">' +
                     '   </td>' +
-                    '   <td class="text-center align-middle">'+ Number((perPage * (currentPage - 1)) + (idx + 1)) +'</td>' +
+                    '   <td class="text-center align-middle">' +
+                    Number((perPage * (currentPage - 1)) + (idx + 1)) + '</td>' +
                     '   <td>' +
                     '       <div class="media d-flex h-100">' +
                     '           <img class="avatar img-circle justify-content-center align-self-center"' +
-                    '                src="'+base_url+siswa.foto+'" width="50" height="50" alt="User Image"> ' +
-                    '           <div class="media-body ml-2 justify-content-center align-self-center">'+siswa.nama+'<br>' + kls +
-                    '               <span class="badge badge-info mr-1">'+siswa.jenis_kelamin+'</span>' + status +
+                    '                src="' + esc(base_url + siswa.foto) + '" width="50" height="50" alt="User Image"> ' +
+                    '           <div class="media-body ml-2 justify-content-center align-self-center">' +
+                    esc(siswa.nama) + '<br>' + unitBadge +
+                    '               <span class="badge badge-light mr-1">' + esc(siswa.jenis_kelamin) + '</span>' +
+                    status +
                     '           </div>' +
                     '       </div>' +
                     '   </td>' +
-                    '   <td class=" align-middle">' +
-                    '       <span class="badge badge-light">'+siswa.nis+'</span><br>' +
-                    '       <span class="badge badge-light">'+siswa.nisn+'</span>' +
+                    '   <td class="align-middle">' +
+                    '       <span class="badge badge-light">' + esc(siswa.nis) + '</span><br>' +
+                    '       <span class="badge badge-light">' + esc(siswa.nisn) + '</span>' +
                     '   </td>' +
-                    '   <td class=" align-middle">' +
+                    kolomTambahan +
+                    '   <td class="align-middle">' +
                     '       <div class="text-center">' +
-                    '           <a class="btn btn-xs btn-warning" href="'+base_url+'datasiswa/edit/'+siswa.id_siswa+'">' +
+                    '           <a class="btn btn-xs btn-warning" href="' + esc(base_url + 'datasiswa/edit/' + siswa.id_siswa) + '">' +
                     '               <i class="fa fa-pencil-alt"></i> Edit' +
                     '           </a>' +
                     '       </div>' +
@@ -644,9 +723,10 @@
             });
         } else {
             var pesan = data.search
-                ? 'Tidak ada siswa yang cocok dengan &quot;' + $('<div>').text(data.search).html() + '&quot;.'
-                : 'Tidak ada data siswa';
-            html += '<tr><td colspan="5" class="text-center align-middle">' + pesan + '</td></tr>';
+                ? 'Tidak ada siswa yang cocok dengan &quot;' + esc(data.search) + '&quot;.'
+                : 'Tidak ada data siswa di unit ini.';
+            var colspan = unitAktif === 'madin' ? 5 : 6;
+            html += '<tr><td colspan="' + colspan + '" class="text-center align-middle">' + pesan + '</td></tr>';
         }
         $('#table-body').html(html);
         $(`.avatar`).each(function () {
