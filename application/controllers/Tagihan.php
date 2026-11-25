@@ -331,8 +331,86 @@ class Tagihan extends CI_Controller {
             ? $this->Tagihan_model->count_siswa_aktif($tp->id_tp, $smt->id_smt) : 0;
         $data['daftar_kelas']   = $data['aktif_tersedia']
             ? $this->Tagihan_model->daftar_kelas_aktif($tp->id_tp, $smt->id_smt) : array();
+        $data['unit_mts']       = (int) unit_id_mts();
 
         $this->_render_admin('tagihan/buat', $data);
+    }
+
+    // Pratinjau sasaran siswa sesuai unit yang dipilih. Memakai fungsi yang
+    // sama dengan buat_proses(), jadi daftar yang tampil = daftar yang dibuat.
+    public function siswa_target_ajax() {
+        $unit_id = (int) $this->input->get('unit_id');
+        if (!array_key_exists($unit_id, unit_pilihan())) {
+            $unit_id = 0;
+        }
+        $target = $this->input->get('target') === 'aktif' ? 'aktif' : 'semua';
+        $id_kelas = (int) $this->input->get('id_kelas');
+
+        // Madin/TPQ tidak memakai rombel, jadi sasaran "aktif di kelas" tidak relevan.
+        $mts = (int) unit_id_mts();
+        $bisa_aktif = ($unit_id === 0 || $unit_id === $mts) && $this->Tagihan_model->siswa_aktif_tersedia();
+        if (!$bisa_aktif) {
+            $target = 'semua';
+        }
+
+        $tp  = $this->dashboard->getTahunActive();
+        $smt = $this->dashboard->getSemesterActive();
+        $id_tp  = $tp ? (int) $tp->id_tp : 0;
+        $id_smt = $smt ? (int) $smt->id_smt : 0;
+
+        $ids_semua = $this->Tagihan_model->id_siswa_target('semua', 0, $id_tp, $id_smt, $unit_id);
+        $ids_aktif = $bisa_aktif
+            ? $this->Tagihan_model->id_siswa_target('aktif', $id_kelas, $id_tp, $id_smt, $unit_id)
+            : array();
+        $ids = $target === 'aktif' ? $ids_aktif : $ids_semua;
+
+        $siswa = array();
+        if ($ids) {
+            $ids = array_values(array_unique(array_map('intval', $ids)));
+            $tempat = implode(',', array_fill(0, count($ids), '?'));
+            $sql = "SELECT s.id_siswa, s.nis, s.nama
+                    FROM master_siswa s
+                    WHERE s.id_siswa IN ($tempat)
+                    ORDER BY s.nama ASC";
+            foreach ($this->db->query($sql, $ids)->result() as $r) {
+                $siswa[] = array(
+                    'id_siswa' => (int) $r->id_siswa,
+                    'nis'      => $r->nis,
+                    'nama'     => $r->nama,
+                    'kelas'    => ''
+                );
+            }
+
+            if ($this->Tagihan_model->siswa_aktif_tersedia() && $id_tp > 0 && $id_smt > 0) {
+                $sql_kelas = "SELECT ks.id_siswa, GROUP_CONCAT(DISTINCT mk.nama_kelas ORDER BY mk.nama_kelas SEPARATOR ', ') AS kelas
+                              FROM kelas_siswa ks
+                              JOIN master_kelas mk ON mk.id_kelas = ks.id_kelas
+                              WHERE ks.id_siswa IN ($tempat) AND ks.id_tp = ? AND ks.id_smt = ?
+                              GROUP BY ks.id_siswa";
+                $bind = array_merge($ids, array($id_tp, $id_smt));
+                $kelas = array();
+                foreach ($this->db->query($sql_kelas, $bind)->result() as $r) {
+                    $kelas[(int) $r->id_siswa] = $r->kelas;
+                }
+                foreach ($siswa as &$s) {
+                    $s['kelas'] = isset($kelas[$s['id_siswa']]) ? $kelas[$s['id_siswa']] : '';
+                }
+                unset($s);
+            }
+        }
+
+        $hasil = array(
+            'unit_id'     => $unit_id,
+            'unit_nama'   => unit_nama($unit_id),
+            'target'      => $target,
+            'bisa_aktif'  => $bisa_aktif,
+            'total'       => count($ids),
+            'total_semua' => count($ids_semua),
+            'total_aktif' => count($ids_aktif),
+            'siswa'       => array_slice($siswa, 0, 300)
+        );
+
+        $this->output->set_content_type('application/json')->set_output(json_encode($hasil));
     }
 
     public function buat_proses() {
@@ -351,11 +429,15 @@ class Tagihan extends CI_Controller {
         $nominal  = $seikhlasnya ? 0 : (int) preg_replace('/\D/', '', (string) $this->input->post('nominal'));
         $ket      = trim((string) $this->input->post('keterangan'));
         $tempo    = trim((string) $this->input->post('jatuh_tempo'));
-        $target   = $this->input->post('target') == 'aktif' ? 'aktif' : 'semua';
         $id_kelas = (int) $this->input->post('id_kelas');
         $unit_id  = (int) $this->input->post('unit_id');
         if (!array_key_exists($unit_id, unit_pilihan())) {
             $unit_id = 0;
+        }
+        // Madin/TPQ tidak punya rombel; paksa sasaran ke semua siswa di unit itu.
+        $target = $this->input->post('target') == 'aktif' ? 'aktif' : 'semua';
+        if ($unit_id !== 0 && $unit_id !== (int) unit_id_mts()) {
+            $target = 'semua';
         }
 
         if (!$seikhlasnya && $nominal <= 0) {
