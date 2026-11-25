@@ -39,6 +39,15 @@
         }
         .siswa-atas .siswa-search { flex: 1 1 100%; max-width: none; margin-left: 0; }
         #baris-jilid, #baris-kelas { flex: 1 1 100%; }
+        #atur-jilid, #atur-kelas, #naik-kelas-massal {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 31px;
+            padding-left: 0;
+            padding-right: 0;
+        }
         .dataTables_filter { text-align: left !important; }
         .dataTables_length { margin-bottom: 0; }
     }
@@ -167,8 +176,9 @@
                                         </select>
                                         <button type="button" id="atur-jilid"
                                                 class="btn btn-sm btn-outline-primary"
-                                                title="Atur nama jilid TPQ">
-                                            <i class="fas fa-cog"></i><span class="ml-1">setting</span>
+                                                title="Atur nama jilid TPQ"
+                                                aria-label="Atur nama jilid TPQ">
+                                            <i class="fas fa-cog"></i><span class="d-none d-sm-inline ml-1">setting</span>
                                         </button>
                                     </div>
                                     <div class="siswa-filter" id="baris-kelas">
@@ -178,13 +188,15 @@
                                         </select>
                                         <button type="button" id="atur-kelas"
                                                 class="btn btn-sm btn-outline-primary"
-                                                title="Atur nama dan urutan kelas">
-                                            <i class="fas fa-cog"></i><span class="ml-1">setting</span>
+                                                title="Atur nama dan urutan kelas"
+                                                aria-label="Atur nama dan urutan kelas">
+                                            <i class="fas fa-cog"></i><span class="d-none d-sm-inline ml-1">setting</span>
                                         </button>
                                         <button type="button" id="naik-kelas-massal"
                                                 class="btn btn-sm btn-outline-success d-none"
-                                                title="Naikkan kelas siswa MTs secara massal">
-                                            <i class="fas fa-arrow-up"></i><span class="ml-1">Naik Kelas</span>
+                                                title="Naikkan kelas siswa MTs secara massal"
+                                                aria-label="Naikkan kelas siswa MTs secara massal">
+                                            <i class="fas fa-arrow-up"></i><span class="d-none d-sm-inline ml-1">Naik Kelas</span>
                                         </button>
                                     </div>
                                 </div>
@@ -662,6 +674,8 @@
         sinkronJilidSiswa();
         sinkronKelasSiswa();
         $('#naik-kelas-massal').toggleClass('d-none', unitAktif !== 'mts');
+        $('#baris-kelas').toggleClass('mts', unitAktif === 'mts')
+            .toggleClass('madin', unitAktif === 'madin');
         $('#formsiswa input.unit-siswa-checkbox').on('change', function () {
             sinkronJilidSiswa();
             sinkronKelasSiswa();
