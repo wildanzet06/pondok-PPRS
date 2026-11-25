@@ -1,5 +1,11 @@
 var table;
 
+function escHtmlAdmin(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
 $(document).ready(function() {
     ajaxcsrf();
 
@@ -94,6 +100,11 @@ $(document).ready(function() {
                                 <a type="button" class="btn btn-xs btn-warning" href="${base_url}useradmin/edit/${data}">
                                     <i class="fa fa-pencil-alt text-white"></i>
                                 </a>
+                                <button type="button" class="btn btn-xs btn-secondary btn-reset-password"
+                                        data-id="${data}" data-nama="${escHtmlAdmin(row.username)}"
+                                        data-toggle="tooltip" title="Reset password">
+                                    <i class="fas fa-key text-white"></i>
+                                </button>
                                 <button type="button" class="btn btn-xs btn-danger" onclick="hapus(${data})">
                                     <i class="fa fa-trash text-white"></i>
                                 </button>
@@ -194,6 +205,50 @@ $(document).ready(function() {
 		});
 		return false;
 	});
+
+    // Reset password admin lain (khusus super admin).
+    $("#users").on("click", ".btn-reset-password", function () {
+        var id = $(this).attr("data-id");
+        var nama = $(this).attr("data-nama") || ("#" + id);
+        $("#resetPasswordForm").attr("action", base_url + "useradmin/reset_password/" + id);
+        $("#reset-password-target").text(nama);
+        $("#reset-password").val("");
+        $("#reset-confirm-password").val("");
+        $("#reset-password-errors").addClass("d-none").html("");
+        $("#resetPasswordModal").modal("show");
+    });
+
+    $("#resetPasswordForm").on("submit", function (e) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        var form = $(this);
+        var kotak = $("#reset-password-errors");
+        kotak.addClass("d-none").html("");
+
+        $.ajax({
+            url: form.attr("action"),
+            type: "POST",
+            dataType: "JSON",
+            data: form.serialize(),
+            success: function (data) {
+                if (!data || data.status !== true) {
+                    var pesan = (data && data.msg) ? data.msg : "Password gagal direset.";
+                    kotak.html(pesan).removeClass("d-none");
+                    showDangerToast(pesan);
+                    return;
+                }
+                $("#reset-password").val("");
+                $("#reset-confirm-password").val("");
+                $("#resetPasswordModal").modal("hide");
+                showSuccessToast(data.msg || "Password berhasil direset.");
+                table.ajax.reload(null, false);
+            },
+            error: function (xhr, status) {
+                showDangerToast(status || "Password gagal direset.");
+            }
+        });
+        return false;
+    });
 });
 
 function hapus(id) {
