@@ -24,7 +24,10 @@ if (!preg_match('/^[A-Za-z0-9.\-]+(:\d{1,5})?$/', $__host)) {
     $__host = isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost';
 }
 $config['base_url'] = "$scheme://" . $__host;
-$config['base_url'] .= preg_replace('@/+$@','',dirname($_SERVER['SCRIPT_NAME'])).'/';
+// Windows: dirname() memakai backslash. Samakan dulu agar base_url tidak
+// berakhir dengan "\/" yang tampil sebagai "//" di browser.
+$__base_dir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+$config['base_url'] .= preg_replace('@/+$@', '', $__base_dir) . '/';
 
 $config['index_page'] = '';
 
