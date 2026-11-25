@@ -93,9 +93,8 @@
                             // (Setting Pembayaran berupa tombol di halaman Pembayaran SPP)
                             {'name': 'Pembayaran SPP', 'link': 'pembayaran', 'icon': 'fas fa-receipt'},
                             {'name': 'Daftar Tagihan', 'link': 'tagihan', 'icon': 'fas fa-file-invoice-dollar'},
-                            {'name': 'Pembayaran Tunai', 'link': 'pembayaran/tunai', 'icon': 'fas fa-money-bill-wave'},
-                            {'name': 'Buat Tagihan', 'link': 'tagihan/buat', 'icon': 'fas fa-plus-circle'},
-                            {'name': 'Jenis Tagihan', 'link': 'tagihan/jenis', 'icon': 'fas fa-tags'},
+                            // Tunai, Buat Tagihan, dan Jenis Tagihan sengaja tidak ada di sini:
+                            // semuanya sudah jadi tombol di halaman Daftar Tagihan.
                             {'name': 'Keringanan Siswa', 'link': 'tagihan/keringanan', 'icon': 'fas fa-hand-holding-heart'},
                             {'name': 'Laporan SPP', 'link': 'pembayaran/laporan', 'icon': 'fas fa-file-alt'},
                             {'name': 'Buku Kas', 'link': 'kas', 'icon': 'fas fa-cash-register'}

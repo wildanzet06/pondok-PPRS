@@ -22,6 +22,9 @@ $qs_filter = http_build_query(array_filter($filter));
                         <a href="<?= site_url('pembayaran/export_tagihan?' . $qs_filter); ?>" class="btn btn-success">
                             <i class="fas fa-file-excel"></i> Ekspor Excel
                         </a>
+                        <a href="<?= site_url('pembayaran/tunai'); ?>" class="btn btn-success">
+                            <i class="fas fa-money-bill-wave"></i> Pembayaran Tunai
+                        </a>
                         <a href="<?= site_url('tagihan/buat'); ?>" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Buat Tagihan
                         </a>
