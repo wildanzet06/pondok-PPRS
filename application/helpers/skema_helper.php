@@ -412,3 +412,196 @@ if (!function_exists('siswa_import_normalisasi')) {
         return $out;
     }
 }
+
+if (!function_exists('siswa_form_defaults')) {
+    /**
+     * Nilai default untuk form tambah siswa manual.
+     *
+     * Form hanya mewajibkan nama dan jenis kelamin. Kolom NOT NULL lain
+     * (NIS, NISN, username, password, kelas awal, NIK, warga negara) diisi
+     * otomatis bila kosong atau bentrok dengan data lama.
+     *
+     * @param array  $post Data POSTAlreadyXSSClean dari controller
+     * @param object $db   CodeIgniter DB instance
+     * @return array
+     */
+    function siswa_form_defaults($post, $db)
+    {
+        $post = is_array($post) ? $post : array();
+        $ambil = function ($key) use ($post) {
+            return trim((string) (isset($post[$key]) ? $post[$key] : ''));
+        };
+
+        $nama = $ambil('nama_siswa');
+        $jenis_kelamin = strtoupper($ambil('jenis_kelamin'));
+        if (!in_array($jenis_kelamin, array('L', 'P'), true)) {
+            $jenis_kelamin = '';
+        }
+
+        $used = array('nis' => array(), 'nisn' => array(), 'username' => array());
+        $max_nis = 10000000;
+        $max_nisn = 9910000000;
+
+        $existing = $db->select('nis, nisn, username')->get('master_siswa')->result_array();
+        foreach ($existing as $r) {
+            foreach ($used as $k => $dummy) {
+                $v = strtolower(trim((string) (isset($r[$k]) ? $r[$k] : '')));
+                if ($v !== '') {
+                    $used[$k][$v] = true;
+                }
+            }
+            $nis_lama = trim((string) (isset($r['nis']) ? $r['nis'] : ''));
+            if (ctype_digit($nis_lama) && (int) $nis_lama > $max_nis) {
+                $max_nis = (int) $nis_lama;
+            }
+            $nisn_lama = trim((string) (isset($r['nisn']) ? $r['nisn'] : ''));
+            if (ctype_digit($nisn_lama) && (float) $nisn_lama > $max_nisn) {
+                $max_nisn = (float) $nisn_lama;
+            }
+        }
+
+        // Username juga harus unik terhadap akun login (admin/guru/siswa).
+        $existing_users = $db->select('username')->get('users')->result_array();
+        foreach ($existing_users as $r) {
+            $v = strtolower(trim((string) (isset($r['username']) ? $r['username'] : '')));
+            if ($v !== '') {
+                $used['username'][$v] = true;
+            }
+        }
+
+        $nis = $ambil('nis');
+        if ($nis === '' || !ctype_digit($nis) || isset($used['nis'][$nis])) {
+            do {
+                $max_nis++;
+                $nis = (string) $max_nis;
+            } while (isset($used['nis'][$nis]));
+        }
+        $used['nis'][$nis] = true;
+
+        $nisn = $ambil('nisn');
+        if ($nisn === '' || !ctype_digit($nisn) || isset($used['nisn'][$nisn])) {
+            do {
+                $max_nisn++;
+                $nisn = (string) $max_nisn;
+            } while (isset($used['nisn'][$nisn]));
+        }
+        $used['nisn'][$nisn] = true;
+
+        $username = $ambil('username');
+        if ($username === '' || isset($used['username'][strtolower($username)])) {
+            $base = preg_replace('/[^a-z0-9]+/', '-', strtolower($nama));
+            $base = trim((string) $base, '-');
+            if ($base === '') {
+                $base = 'siswa';
+            }
+            $tail = '-' . $nis;
+            $candidate = substr($base, 0, max(1, 50 - strlen($tail))) . $tail;
+            $i = 2;
+            while (isset($used['username'][strtolower($candidate)])) {
+                $tail = '-' . $nis . '-' . $i;
+                $candidate = substr($base, 0, max(1, 50 - strlen($tail))) . $tail;
+                $i++;
+            }
+            $username = $candidate;
+        }
+        $used['username'][strtolower($username)] = true;
+
+        $password = $ambil('password');
+        if ($password === '' || strlen($password) < 6) {
+            $password = '123456';
+        }
+
+        $kelas_awal = $ambil('kelas_awal');
+        if ($kelas_awal === '' || !ctype_digit($kelas_awal)) {
+            $kelas_awal = '7';
+        }
+
+        return array(
+            'nama' => $nama,
+            'jenis_kelamin' => $jenis_kelamin,
+            'nis' => $nis,
+            'nisn' => $nisn,
+            'username' => $username,
+            'password' => $password,
+            'kelas_awal' => $kelas_awal,
+            'tahun_masuk' => $ambil('tahun_masuk'),
+            'nik' => $ambil('nik'),
+            'warga_negara' => $ambil('warga_negara'),
+            'foto' => 'assets/img/siswa.png'
+        );
+    }
+}
+
+if (!function_exists('siswa_akun_aktifkan')) {
+    /**
+     * Pastikan siswa punya akun login aktif (group siswa / id 3).
+     * Dipakai saat tambah siswa manual agar user tidak perlu aktifasi lagi.
+     *
+     * @param object|array $siswa Baris master_siswa (username, password, nis, nama)
+     * @param object|null  $CI    CodeIgniter instance
+     * @return bool
+     */
+    function siswa_akun_aktifkan($siswa, $CI = null)
+    {
+        $CI = $CI ?: get_instance();
+        $ambil = function ($key) use ($siswa) {
+            if (is_object($siswa)) {
+                return isset($siswa->$key) ? trim((string) $siswa->$key) : '';
+            }
+            return is_array($siswa) && isset($siswa[$key]) ? trim((string) $siswa[$key]) : '';
+        };
+
+        $username = $ambil('username');
+        if ($username === '') {
+            return false;
+        }
+        if (!isset($CI->ion_auth)) {
+            $CI->load->library('ion_auth');
+        }
+
+        // Akun sudah ada: cukup pastikan aktif dan tetap di group siswa.
+        $user = $CI->db->get_where('users', array('username' => $username))->row();
+        if ($user) {
+            $CI->db->update('users', array('active' => 1), array('id' => $user->id));
+            $relasi = $CI->db->get_where('users_groups', array(
+                'user_id' => $user->id,
+                'group_id' => 3
+            ))->row();
+            if (!$relasi) {
+                $CI->db->insert('users_groups', array('user_id' => $user->id, 'group_id' => 3));
+            }
+            return true;
+        }
+
+        $password = $ambil('password');
+        if ($password === '') {
+            return false;
+        }
+
+        $nis = $ambil('nis');
+        $email = ($nis !== '' ? $nis : $username) . '@siswa.com';
+        $lama = $CI->db->get_where('users', array('email' => $email))->row();
+        if ($lama && !$CI->ion_auth->delete_user($lama->id)) {
+            return false;
+        }
+
+        $nama = preg_split('/\s+/', trim($ambil('nama')));
+        $first_name = isset($nama[0]) ? $nama[0] : '';
+        $last_name = count($nama) > 1 ? end($nama) : '';
+
+        $reg = $CI->ion_auth->register(
+            $username,
+            $password,
+            $email,
+            array('first_name' => $first_name, 'last_name' => $last_name),
+            array('3')
+        );
+        if ($reg === false) {
+            return false;
+        }
+
+        // Berlapis: manual_activation di config sudah FALSE, ini jamin active = 1.
+        $CI->db->update('users', array('active' => 1), array('username' => $username));
+        return true;
+    }
+}

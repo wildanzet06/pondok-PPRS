@@ -148,6 +148,10 @@
                 </button>
             </div>
             <div class="modal-body">
+                <div class="alert alert-light border small mb-3">
+                    Cukup isi <b>Nama</b> dan <b>Jenis Kelamin</b>. Field lain boleh kosong:
+                    NIS, NISN, username, dan password akan dibuat otomatis, akun siswa langsung aktif.
+                </div>
                 <div class="row mb-3">
                     <div class="col-md-4 col-sm-offset-4">
                         <label for="nama_siswa">Nama Siswa :</label>
@@ -171,7 +175,8 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                             </div>
-                            <input type="number" id="nis" class="form-control" name="nis" placeholder="NIS" required>
+                            <input type="number" id="nis" class="form-control" name="nis"
+                                   placeholder="NIS (opsional, otomatis)">
                         </div>
                     </div>
                 </div>
@@ -184,7 +189,8 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                             </div>
-                            <input type="number" id="nisn" class="form-control" name="nisn" placeholder="NISN" required>
+                            <input type="number" id="nisn" class="form-control" name="nisn"
+                                   placeholder="NISN (opsional, otomatis)">
                         </div>
                     </div>
                 </div>
@@ -198,7 +204,7 @@
                                 <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
                             </div>
                             <select class="form-control" id="jenis_kelamin" data-placeholder="Jenis Kelamin"
-                                    name="jenis_kelamin">
+                                    name="jenis_kelamin" required>
                                 <option value="">Pilih Jenis Kelamin</option>
                                 <option value="L">Laki-laki</option>
                                 <option value="P">Perempuan</option>
@@ -254,7 +260,7 @@
 									<i class="fas fa-calendar-alt"></i></span>
                             </div>
                             <input type="text" name="tahun_masuk" id="tahunmasuk" class="form-control"
-                                   autocomplete="off" placeholder="Tgl/Tahun Masuk" required>
+                                   autocomplete="off" placeholder="Tgl/Tahun Masuk (opsional)">
                         </div>
                     </div>
                 </div>
@@ -267,8 +273,8 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-user"></i></span>
                             </div>
-                            <input id="username" type="text" class="form-control" name="username" placeholder="Username"
-                                   required>
+                            <input id="username" type="text" class="form-control" name="username"
+                                   placeholder="Username (opsional, otomatis)">
                         </div>
                     </div>
                 </div>
@@ -281,7 +287,8 @@
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                             </div>
-                            <input id="password" class="form-control" name="password" placeholder="Password" required>
+                            <input id="password" class="form-control" name="password"
+                                   placeholder="Password (opsional, default 123456)">
                         </div>
                     </div>
                 </div>
@@ -525,8 +532,6 @@
                 swal.fire({title: "Error", text: "Pilih minimal satu unit murid.", icon: "error"});
                 return;
             }
-            var usernameBaru = $('#username').val();
-            var passwordBaru = $('#password').val();
             console.log($(this).serialize());
             $.ajax({
                 url: base_url + "datasiswa/create",
@@ -541,31 +546,14 @@
                     });
 
                     if (response.insert) {
-                        // Password terisi -> langsung buat akun login (status aktif).
-                        if (usernameBaru && passwordBaru) {
-                            $.ajax({
-                                url: base_url + "akun/aktifkan_siswa_baru",
-                                type: 'POST',
-                                dataType: 'JSON',
-                                data: {username: usernameBaru},
-                                success: function (aktif) {
-                                    if (aktif && aktif.status) {
-                                        showSuccessToast(response.text + ' Akun langsung aktif.');
-                                    } else {
-                                        showDangerToast(response.text + ' Akun belum aktif: ' +
-                                            ((aktif && aktif.msg) ? aktif.msg : 'silakan aktifkan di User Management.'));
-                                    }
-                                    loadSiswa();
-                                },
-                                error: function () {
-                                    showDangerToast(response.text + ' Akun belum aktif, silakan aktifkan di User Management.');
-                                    loadSiswa();
-                                }
-                            });
-                        } else {
-                            showSuccessToast(response.text);
-                            loadSiswa();
+                        var detail = '';
+                        if (response.username) detail += ' Username: ' + response.username;
+                        if (response.password_default) detail += ' Password: ' + response.password_default;
+                        if (!response.akun_aktif) {
+                            detail += ' Akun belum aktif, aktifkan di User Management.';
                         }
+                        showSuccessToast(response.text + detail);
+                        loadSiswa();
                     } else {
                         showDangerToast(response.text);
                     }
