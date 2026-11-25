@@ -1,3 +1,58 @@
+<style>
+    /* Sakelar kecil tampil/sembunyi fitur tersembunyi di panel pengguna. */
+    .user-panel .info { min-width: 0; }
+    .user-panel-baris { display: flex; align-items: center; gap: .5rem; }
+    .user-panel-baris .user-panel-nama {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .fitur-toggle-form { display: flex; flex: 0 0 auto; margin: 0; }
+    .fitur-toggle {
+        position: relative;
+        flex: 0 0 auto;
+        width: 34px;
+        height: 18px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        cursor: pointer;
+        line-height: 0;
+    }
+    .fitur-toggle-slider {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(255, 255, 255, .22);
+        border: 1px solid rgba(255, 255, 255, .45);
+        border-radius: 999px;
+        transition: background-color .15s ease, border-color .15s ease;
+    }
+    .fitur-toggle-slider::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+        transition: transform .15s ease;
+    }
+    .fitur-toggle:hover .fitur-toggle-slider { border-color: #f0ad4e; }
+    .fitur-toggle:focus { outline: 0; }
+    .fitur-toggle:focus-visible .fitur-toggle-slider { box-shadow: 0 0 0 2px rgba(240, 173, 78, .55); }
+    .fitur-toggle.aktif .fitur-toggle-slider {
+        background: #f0ad4e;
+        border-color: #f0ad4e;
+    }
+    .fitur-toggle.aktif .fitur-toggle-slider::before { transform: translateX(16px); }
+</style>
+
 <!-- Main Sidebar Container -->
 <aside class="main-sidebar sidebar-light-teal my-shadow">
     <!-- Brand Logo -->
@@ -27,26 +82,28 @@
                 <img src="<?= $avatar ?>" class="img-circle elevation-2" alt="User Image">
             </div>
             <div class="info">
-                <a href="#" class="d-block" style="line-height: 1">
-                    <?= $nama_user ?>
-                    <br>
-                    <small class="text-muted">
-                        <?= $jabatan ?>
-                    </small>
-                </a>
+                <div class="user-panel-baris">
+                    <a href="#" class="user-panel-nama" style="line-height: 1">
+                        <?= $nama_user ?>
+                    </a>
+                    <?php if ($this->ion_auth->is_admin()) : ?>
+                        <?php $fitur_tersembunyi_aktif = $this->session->userdata('tampilkan_fitur_tersembunyi') === '1'; ?>
+                        <?= form_open('fitur/toggle', array('class' => 'fitur-toggle-form')) ?>
+                        <button type="submit" class="fitur-toggle <?= $fitur_tersembunyi_aktif ? 'aktif' : ''; ?>"
+                                role="switch"
+                                aria-checked="<?= $fitur_tersembunyi_aktif ? 'true' : 'false'; ?>"
+                                title="<?= $fitur_tersembunyi_aktif ? 'Sembunyikan fitur tersembunyi' : 'Tampilkan fitur tersembunyi'; ?>">
+                            <span class="fitur-toggle-slider"></span>
+                            <span class="sr-only"><?= $fitur_tersembunyi_aktif ? 'Sembunyikan fitur tersembunyi' : 'Tampilkan fitur tersembunyi'; ?></span>
+                        </button>
+                        <?= form_close() ?>
+                    <?php endif; ?>
+                </div>
+                <small class="text-muted d-block">
+                    <?= $jabatan ?>
+                </small>
             </div>
         </div>
-
-        <?php if ($this->ion_auth->is_admin()) : ?>
-            <?php $fitur_tersembunyi_aktif = $this->session->userdata('tampilkan_fitur_tersembunyi') === '1'; ?>
-            <?= form_open('fitur/toggle', array('class' => 'px-3 mb-2')) ?>
-            <button type="submit" class="btn btn-sm btn-block <?= $fitur_tersembunyi_aktif ? 'btn-warning' : 'btn-outline-warning' ?>"
-                    title="Tampilkan atau sembunyikan fitur yang disembunyikan">
-                <i class="fas fa-eye<?= $fitur_tersembunyi_aktif ? '-slash' : '' ?> mr-1"></i>
-                <?= $fitur_tersembunyi_aktif ? 'Sembunyikan Fitur' : 'Tampilkan Fitur' ?>
-            </button>
-            <?= form_close() ?>
-        <?php endif; ?>
 
         <!-- Sidebar Menu -->
         <nav class="mt-2 mb-5">
