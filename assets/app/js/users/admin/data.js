@@ -1,5 +1,11 @@
 var table;
 
+function escHtmlAdmin(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
 $(document).ready(function() {
     ajaxcsrf();
 
@@ -94,6 +100,11 @@ $(document).ready(function() {
                                 <a type="button" class="btn btn-xs btn-warning" href="${base_url}useradmin/edit/${data}">
                                     <i class="fa fa-pencil-alt text-white"></i>
                                 </a>
+                                <button type="button" class="btn btn-xs btn-info btn-reset-login"
+                                        data-id="${data}" data-nama="${escHtmlAdmin(row.username)}"
+                                        data-toggle="tooltip" title="Reset login (buka kunci)">
+                                    <i class="fas fa-unlock text-white"></i>
+                                </button>
                                 <button type="button" class="btn btn-xs btn-danger" onclick="hapus(${data})">
                                     <i class="fa fa-trash text-white"></i>
                                 </button>
@@ -139,6 +150,47 @@ $(document).ready(function() {
             error: function() {
                 swal.fire({title: "Gagal", text: "Password tidak dapat ditampilkan.", icon: "error"});
             }
+        });
+    });
+
+    // Reset login = hapus kunci akibat percobaan login gagal, password tetap.
+    $("#users").on("click", ".btn-reset-login", function() {
+        let tombol = $(this);
+        let id = tombol.attr("data-id");
+        let nama = tombol.attr("data-nama") || ("#" + id);
+
+        swal.fire({
+            title: "Reset login?",
+            text: "Percobaan login gagal untuk " + nama + " akan dihapus agar akun bisa login lagi. Password tidak diubah.",
+            type: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Reset login"
+        }).then(function(result) {
+            if (!result.value) return;
+
+            tombol.prop("disabled", true);
+            $.ajax({
+                url: base_url + "useradmin/reset_login/" + id,
+                type: "POST",
+                dataType: "JSON",
+                success: function(data) {
+                    tombol.prop("disabled", false);
+                    if (!data || data.status !== true) {
+                        let pesan = (data && data.msg) ? data.msg : "Reset login gagal.";
+                        showDangerToast(pesan);
+                        swal.fire({title: "Gagal", text: pesan, type: "error"});
+                        return;
+                    }
+                    showSuccessToast(data.msg || "Login berhasil direset.");
+                },
+                error: function(xhr, status) {
+                    tombol.prop("disabled", false);
+                    let pesan = (xhr.responseJSON && xhr.responseJSON.msg) ? xhr.responseJSON.msg : (status || "Reset login gagal.");
+                    showDangerToast(pesan);
+                }
+            });
         });
     });
 
