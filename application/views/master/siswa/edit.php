@@ -105,7 +105,9 @@ if (!file_exists(FCPATH . $siswa->foto)) {
                             <div class="tab-content">
                                 <div class="tab-pane active" id="datasiswa">
                                     <?php foreach ($input_data as $data) :
-                                        $req = $data->name == 'nisn' || $data->name == 'sekolah_asal' ? '' : ' required' ?>
+                                        // Tgl diterima (tahun_masuk) opsional: boleh dikosongkan.
+                                        $opsional = array('nisn', 'sekolah_asal', 'tahun_masuk');
+                                        $req = in_array($data->name, $opsional, true) ? '' : ' required' ?>
                                         <?php if ($data->name == 'jenis_kelamin'): ?>
                                         <div class="form-group row">
                                             <div class="col-md-4 col-6 mb-sm-0">
