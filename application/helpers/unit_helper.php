@@ -494,3 +494,326 @@ if (!function_exists('unit_siswa_naik_jilid')) {
         return $CI->db->affected_rows() > 0 ? $baru : false;
     }
 }
+
+if (!function_exists('kelas_unit_id')) {
+    /** Id master_unit untuk kode unit (mts/madin/tpq). */
+    function kelas_unit_id($unit)
+    {
+        $unit = strtolower(trim((string) $unit));
+        if ($unit === 'madin') {
+            return function_exists('unit_id_madin') ? (int) unit_id_madin() : 2;
+        }
+        if ($unit === 'tpq') {
+            return function_exists('unit_id_tpq') ? (int) unit_id_tpq() : 3;
+        }
+        return function_exists('unit_id_mts') ? (int) unit_id_mts() : 1;
+    }
+}
+
+if (!function_exists('kelas_daftar')) {
+    /**
+     * Daftar kelas formal (MTs) / kelas Madin yang dipakai sebagai pengelompok
+     * di /datasiswa. Nama tampil dan urutan bisa diatur lewat master_kelas_label.
+     */
+    function kelas_daftar($unit = 'mts')
+    {
+        $CI =& get_instance();
+        $id_unit = kelas_unit_id($unit);
+        $ada_label = $CI->db->table_exists('master_kelas_label');
+
+        $sql = "SELECT k.id_kelas,
+                       COALESCE(NULLIF(k.kode_kelas, ''), k.nama_kelas) AS kode,
+                       k.nama_kelas,
+                       " . ($ada_label ? "l.nama AS label, COALESCE(l.urutan, 999) AS urutan" : "NULL AS label, 999 AS urutan") . "
+                FROM master_kelas k
+                " . ($ada_label
+                    ? "LEFT JOIN master_kelas_label l
+                          ON l.unit_id = k.unit_id
+                         AND l.kode = COALESCE(NULLIF(k.kode_kelas, ''), k.nama_kelas)"
+                    : "") . "
+                WHERE k.unit_id = " . (int) $id_unit . "
+                ORDER BY urutan ASC, kode ASC";
+        $baris = $CI->db->query($sql)->result_array();
+
+        $hasil = array();
+        foreach ($baris as $r) {
+            $kode = trim((string) $r['kode']);
+            if ($kode === '') {
+                continue;
+            }
+            $hasil[] = array(
+                'kode'     => $kode,
+                'nama'     => ($r['label'] !== null && trim((string) $r['label']) !== '')
+                    ? (string) $r['label'] : (string) $r['nama_kelas'],
+                'urutan'   => (int) $r['urutan'],
+                'id_kelas' => (int) $r['id_kelas']
+            );
+        }
+        return $hasil;
+    }
+}
+
+if (!function_exists('kelas_nama')) {
+    /** Nama tampil sebuah kode kelas; kode itu sendiri bila belum diberi nama. */
+    function kelas_nama($kode, $unit = 'mts')
+    {
+        $kode = trim((string) $kode);
+        if ($kode === '') {
+            return '';
+        }
+        static $peta = array();
+        $kunci = strtolower((string) $unit);
+        if (!isset($peta[$kunci])) {
+            $peta[$kunci] = array();
+            foreach (kelas_daftar($kunci) as $item) {
+                $peta[$kunci][$item['kode']] = $item['nama'];
+            }
+        }
+        return isset($peta[$kunci][$kode]) ? $peta[$kunci][$kode] : $kode;
+    }
+}
+
+if (!function_exists('kelas_sql_urutan')) {
+    /** Ekspresi ORDER BY untuk mengelompokkan kelas sesuai urutan setting. */
+    function kelas_sql_urutan($unit = 'mts', $alias = 'f')
+    {
+        $CI =& get_instance();
+        $id_unit = (int) kelas_unit_id($unit);
+        $alias = preg_replace('/[^A-Za-z0-9_]/', '', (string) $alias);
+        if ($alias === '') {
+            $alias = 'f';
+        }
+        $kode = "COALESCE(NULLIF($alias.kode_kelas, ''), $alias.nama_kelas)";
+        $awal = "(CASE WHEN $kode IS NULL OR $kode = '' THEN 9999 ELSE ";
+        if ($CI->db->table_exists('master_kelas_label')) {
+            return $awal . "COALESCE((SELECT l.urutan FROM master_kelas_label l
+                        WHERE l.unit_id = " . $id_unit . " AND l.kode = $kode LIMIT 1), 999) END)";
+        }
+        return $awal . "CASE WHEN $kode REGEXP '^[0-9]+$' THEN CAST($kode AS UNSIGNED) ELSE 999 END END)";
+    }
+}
+
+if (!function_exists('siswa_kelas_kode')) {
+    /** Kode kelas (MTs/Madin) yang sedang dipakai seorang siswa. */
+    function siswa_kelas_kode($id_siswa, $unit = 'mts')
+    {
+        $CI =& get_instance();
+        $row = $CI->db->query(
+            "SELECT COALESCE(NULLIF(k.kode_kelas, ''), k.nama_kelas) AS kode
+             FROM kelas_siswa ks
+             JOIN master_kelas k ON k.id_kelas = ks.id_kelas
+             WHERE ks.id_siswa = ? AND k.unit_id = ?
+             ORDER BY ks.id_kelas_siswa DESC LIMIT 1",
+            array((int) $id_siswa, (int) kelas_unit_id($unit))
+        )->row();
+        return $row ? trim((string) $row->kode) : '';
+    }
+}
+
+if (!function_exists('siswa_kelas_simpan')) {
+    /**
+     * Tempatkan siswa langsung ke kelas unit yang dicentang saat tambah/edit.
+     * Satu siswa hanya punya satu kelas per unit. Tanpa pilihan, dipakai kelas
+     * pertama yang tersedia agar siswa langsung tampil tergelompok di /datasiswa.
+     */
+    function siswa_kelas_simpan($id_siswa, $pilihan_unit, $id_tp = 0, $id_smt = 0)
+    {
+        $CI =& get_instance();
+        $id_siswa = (int) $id_siswa;
+        if ($id_siswa <= 0) {
+            return false;
+        }
+
+        $mentah = array();
+        if (is_array($pilihan_unit)) {
+            foreach ($pilihan_unit as $item) {
+                foreach (explode(',', (string) $item) as $bagian) {
+                    $mentah[] = trim($bagian);
+                }
+            }
+        } elseif ($pilihan_unit !== null && $pilihan_unit !== '') {
+            $mentah = explode(',', (string) $pilihan_unit);
+        }
+
+        $valid = array_keys(unit_pilihan());
+        $units = array();
+        foreach ($mentah as $item) {
+            $item = trim($item);
+            $id_unit = (int) $item;
+            if (!$id_unit) {
+                foreach ($valid as $uid) {
+                    if (strcasecmp($item, (string) unit_nama($uid)) === 0
+                        || strcasecmp($item, unit_kode($uid)) === 0) {
+                        $id_unit = (int) $uid;
+                        break;
+                    }
+                }
+            }
+            if (in_array($id_unit, $valid, true)) {
+                $units[$id_unit] = $id_unit;
+            }
+        }
+        if (!$units) {
+            $units = unit_siswa_unit_ids_by_id($id_siswa);
+        }
+        if (!$units) {
+            $units = array((int) unit_id_mts());
+        }
+
+        if ((int) $id_tp <= 0 || (int) $id_smt <= 0) {
+            if (!isset($CI->dashboard)) {
+                $CI->load->model('Dashboard_model', 'dashboard');
+            }
+            $tp = $CI->dashboard->getTahunActive();
+            $smt = $CI->dashboard->getSemesterActive();
+            $id_tp = $tp ? (int) $tp->id_tp : 0;
+            $id_smt = $smt ? (int) $smt->id_smt : 0;
+        }
+        if ((int) $id_tp <= 0 || (int) $id_smt <= 0) {
+            return false;
+        }
+
+        $berhasil = true;
+        foreach (array(unit_id_mts(), unit_id_madin()) as $id_unit) {
+            if (!isset($units[$id_unit])) {
+                continue;
+            }
+            $kunci = unit_kode($id_unit) === 'madin' ? 'kelas_madin' : 'kelas_mts';
+            $kode = trim((string) $CI->input->post($kunci, true));
+            $daftar = kelas_daftar(unit_kode($id_unit));
+
+            $id_kelas = 0;
+            $jk = null;
+            if ($kode === '' && (int) $id_unit === (int) unit_id_madin()) {
+                $jk = $CI->db->select('jenis_kelamin')
+                    ->where('id_siswa', $id_siswa)
+                    ->get('master_siswa')->row();
+            }
+            $perempuan = $jk && in_array(
+                strtoupper(trim((string) $jk->jenis_kelamin)),
+                array('P', '2', 'PEREMPUAN'),
+                true
+            );
+            foreach ($daftar as $item) {
+                if ($kode !== '' && $item['kode'] === $kode) {
+                    $id_kelas = (int) $item['id_kelas'];
+                    break;
+                }
+                if ($kode === '' && $id_kelas === 0) {
+                    $nama = strtolower((string) $item['nama']);
+                    $sesuai = ($jk === null)
+                        || ($perempuan && strpos($nama, 'putri') !== false)
+                        || (!$perempuan && strpos($nama, 'putra') !== false);
+                    if ($sesuai) {
+                        $id_kelas = (int) $item['id_kelas'];
+                    }
+                }
+            }
+            if ($id_kelas <= 0) {
+                continue;
+            }
+
+            $CI->db->where('id_siswa', $id_siswa)
+                ->where('id_tp', (int) $id_tp)
+                ->where('id_smt', (int) $id_smt)
+                ->where('unit_id', (int) $id_unit)
+                ->delete('kelas_siswa');
+            $simpan = $CI->db->insert('kelas_siswa', array(
+                'id_tp'    => (int) $id_tp,
+                'id_smt'   => (int) $id_smt,
+                'id_siswa' => $id_siswa,
+                'id_kelas' => $id_kelas,
+                'unit_id'  => (int) $id_unit
+            ));
+            if (!$simpan) {
+                $berhasil = false;
+            }
+        }
+        return $berhasil;
+    }
+}
+
+if (!function_exists('siswa_kelas_pastikan')) {
+    /**
+     * Pastikan siswa hasil import/data lama punya kelas MTs/Madin sehingga
+     * langsung tampil tergelompok di /datasiswa. Tidak mengubah kelas yang
+     * sudah dipilih. Dipakai juga saat migrasi skema.
+     */
+    function siswa_kelas_pastikan($id_siswa, $id_tp = 0, $id_smt = 0)
+    {
+        $CI =& get_instance();
+        $id_siswa = (int) $id_siswa;
+        if ($id_siswa <= 0) {
+            return false;
+        }
+
+        if ((int) $id_tp <= 0 || (int) $id_smt <= 0) {
+            if (!isset($CI->dashboard)) {
+                $CI->load->model('Dashboard_model', 'dashboard');
+            }
+            $tp = $CI->dashboard->getTahunActive();
+            $smt = $CI->dashboard->getSemesterActive();
+            $id_tp = $tp ? (int) $tp->id_tp : 0;
+            $id_smt = $smt ? (int) $smt->id_smt : 0;
+        }
+        if ((int) $id_tp <= 0 || (int) $id_smt <= 0) {
+            return false;
+        }
+
+        $unit_rows = $CI->db->select('unit_id')
+            ->where('siswa_id', $id_siswa)
+            ->where('status', 1)
+            ->get('master_siswa_unit')->result_array();
+        $units = array();
+        foreach ($unit_rows as $row) {
+            $units[(int) $row['unit_id']] = (int) $row['unit_id'];
+        }
+        if (!$units) {
+            $units = array((int) unit_id_mts());
+        }
+
+        foreach (array(unit_id_mts(), unit_id_madin()) as $id_unit) {
+            if (!isset($units[(int) $id_unit])) {
+                continue;
+            }
+            $ada = $CI->db->where('id_siswa', $id_siswa)
+                ->where('unit_id', (int) $id_unit)
+                ->where('id_tp', (int) $id_tp)
+                ->where('id_smt', (int) $id_smt)
+                ->count_all_results('kelas_siswa');
+            if ($ada > 0) {
+                continue;
+            }
+            $daftar = kelas_daftar(unit_kode((int) $id_unit));
+            if (!$daftar) {
+                continue;
+            }
+            $pilih = $daftar[0]['id_kelas'];
+            if ((int) $id_unit === (int) unit_id_madin()) {
+                $jk = $CI->db->select('jenis_kelamin')
+                    ->where('id_siswa', $id_siswa)
+                    ->get('master_siswa')->row();
+                $perempuan = $jk && in_array(strtoupper(trim((string) $jk->jenis_kelamin)), array('P', '2', 'PEREMPUAN'), true);
+                foreach ($daftar as $item) {
+                    $nama = strtolower((string) $item['nama']);
+                    if ($perempuan && strpos($nama, 'putri') !== false) {
+                        $pilih = $item['id_kelas'];
+                        break;
+                    }
+                    if (!$perempuan && strpos($nama, 'putra') !== false) {
+                        $pilih = $item['id_kelas'];
+                        break;
+                    }
+                }
+            }
+            $CI->db->insert('kelas_siswa', array(
+                'id_tp'    => (int) $id_tp,
+                'id_smt'   => (int) $id_smt,
+                'id_siswa' => $id_siswa,
+                'id_kelas' => (int) $pilih,
+                'unit_id'  => (int) $id_unit
+            ));
+        }
+        return true;
+    }
+}

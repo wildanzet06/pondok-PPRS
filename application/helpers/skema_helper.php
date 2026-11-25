@@ -22,7 +22,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
         $selesai = true;
 
         $tabel = array(
-            'master_unit', 'master_siswa_unit', 'master_jilid',
+            'master_unit', 'master_siswa_unit', 'master_jilid', 'master_kelas_label',
             'cbt_pembayaran_spp', 'cbt_setting_spp', 'cbt_jenis_tagihan', 'cbt_tagihan',
             'cbt_keringanan', 'cbt_password_diganti', 'cbt_presensi_sesi', 'cbt_presensi', 'cbt_setting_poin',
             'cbt_rekening', 'cbt_bacaan'
@@ -73,6 +73,16 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 PRIMARY KEY (id),
                 UNIQUE KEY uk_jilid_kode (kode)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS master_kelas_label (
+                id       INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                unit_id  TINYINT UNSIGNED NOT NULL,
+                kode     VARCHAR(50)  NOT NULL,
+                nama     VARCHAR(100) NOT NULL,
+                urutan   INT          NOT NULL DEFAULT 0,
+                PRIMARY KEY (id),
+                UNIQUE KEY uk_kelas_label (unit_id, kode)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci",
 
             "CREATE TABLE IF NOT EXISTS cbt_pembayaran_spp (
                 id                 INT          NOT NULL AUTO_INCREMENT,
@@ -213,6 +223,16 @@ if (!function_exists('skema_tambahan_pastikan')) {
         }
         }
 
+        // Tabel label yang dibuat MySQL 8 memakai collation 0900; samakan dengan
+        // master_kelas (general_ci) agar JOIN per kode tidak error.
+        $kol_label = $db->query(
+            "SELECT TABLE_COLLATION AS c FROM information_schema.tables
+             WHERE table_schema = DATABASE() AND table_name = 'master_kelas_label' LIMIT 1"
+        )->row();
+        if ($kol_label && stripos((string) $kol_label->c, 'general_ci') === false) {
+            $db->query('ALTER TABLE master_kelas_label CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci');
+        }
+
         // Kolom yang mungkin belum ada pada pemasangan versi lama.
         $kolom = array(
             array('cbt_pembayaran_spp', 'tagihan_id',        'ALTER TABLE cbt_pembayaran_spp ADD COLUMN tagihan_id INT UNSIGNED DEFAULT NULL'),
@@ -249,6 +269,13 @@ if (!function_exists('skema_tambahan_pastikan')) {
             }
         }
 
+        // Data lama kelas_siswa punya PRIMARY key tanpa AUTO_INCREMENT, sehingga
+        // INSERT baru gagal dengan "Duplicate entry '0'". Perbaiki sekali.
+        $pk_kelas = $db->query("SHOW COLUMNS FROM kelas_siswa LIKE 'id_kelas_siswa'")->row();
+        if ($pk_kelas && stripos((string) $pk_kelas->Extra, 'auto_increment') === false) {
+            $db->query('ALTER TABLE kelas_siswa MODIFY COLUMN id_kelas_siswa INT NOT NULL AUTO_INCREMENT');
+        }
+
         // Pastikan nilai 'tunai' tersedia pada metode pembayaran.
         $metode = $db->query("SHOW COLUMNS FROM cbt_pembayaran_spp LIKE 'metode_pembayaran'")->row();
         if ($metode && stripos((string) $metode->Type, "'tunai'") === false) {
@@ -264,6 +291,32 @@ if (!function_exists('skema_tambahan_pastikan')) {
         $db->query("INSERT IGNORE INTO master_jilid (kode, nama, urutan) VALUES
                     ('1', 'Jilid 1', 1), ('2', 'Jilid 2', 2), ('3', 'Jilid 3', 3),
                     ('4', 'Jilid 4', 4), ('5', 'Jilid 5', 5), ('6', 'Jilid 6', 6)");
+
+        // Enam kelas Madin: Putra 1-3 dan Putri 1-3. Dibuat sebagai kelas
+        // nyata supaya pengelompokan di /datasiswa memakai master_kelas,
+        // tetapi presensi Madin tetap memakai kelas virtual "Seluruh santri".
+        $id_madin = (int) $db->query("SELECT id_unit FROM master_unit WHERE kode = 'madin' LIMIT 1")->row()->id_unit;
+        if ($id_madin <= 0) {
+            $id_madin = 2;
+        }
+        foreach (array('Putra 1', 'Putra 2', 'Putra 3', 'Putri 1', 'Putri 2', 'Putri 3') as $i => $nama_kelas) {
+            $urutan = $i + 1;
+            $db->query("INSERT INTO master_kelas
+                        (id_tp, id_smt, nama_kelas, kode_kelas, level_id, unit_id, set_siswa)
+                        SELECT COALESCE((SELECT id_tp FROM master_tp WHERE active = 1 LIMIT 1),
+                                        (SELECT MIN(id_tp) FROM master_tp), 1),
+                               COALESCE((SELECT id_smt FROM master_smt WHERE active = 1 LIMIT 1),
+                                        (SELECT MIN(id_smt) FROM master_smt), 1),
+                               " . $db->escape($nama_kelas) . ", " . $db->escape($nama_kelas) . ",
+                               1, " . $id_madin . ", '0'
+                        FROM DUAL
+                        WHERE NOT EXISTS (SELECT 1 FROM master_kelas
+                                          WHERE unit_id = " . $id_madin . "
+                                            AND kode_kelas = " . $db->escape($nama_kelas) . ")");
+            $db->query("INSERT IGNORE INTO master_kelas_label (unit_id, kode, nama, urutan)
+                        VALUES (" . $id_madin . ", " . $db->escape($nama_kelas) . ", "
+                        . $db->escape($nama_kelas) . ", " . $urutan . ")");
+        }
 
         // Tagihan lama dibuat sebelum jenisnya diberi unit, sehingga unit_id-nya
         // masih 0 dan tidak muncul saat daftar tagihan difilter per unit.
@@ -305,6 +358,45 @@ if (!function_exists('skema_tambahan_pastikan')) {
         }
         if ($db->table_exists('cbt_soal') && !$db->field_exists('id_bacaan', 'cbt_soal')) {
             $db->query("ALTER TABLE `cbt_soal` ADD COLUMN `id_bacaan` INT NULL");
+        }
+
+        // Siswa lama/hasil import yang belum memiliki kelas langsung ditempatkan
+        // ke kelas pertama sesuai unitnya, supaya tampil tergelompok di /datasiswa
+        // tanpa harus membuka menu Kelas/Rombel.
+        if (function_exists('siswa_kelas_pastikan')) {
+            $tp_aktif = $db->query("SELECT id_tp FROM master_tp WHERE active = 1 LIMIT 1")->row();
+            $smt_aktif = $db->query("SELECT id_smt FROM master_smt WHERE active = 1 LIMIT 1")->row();
+            if ($tp_aktif && $smt_aktif) {
+                $id_tp = (int) $tp_aktif->id_tp;
+                $id_smt = (int) $smt_aktif->id_smt;
+                $perlu = $db->query(
+                    "SELECT a.id_siswa FROM master_siswa a
+                     JOIN buku_induk u ON u.id_siswa = a.id_siswa AND u.status = 1
+                     WHERE (
+                       (EXISTS (SELECT 1 FROM master_siswa_unit su
+                                 WHERE su.siswa_id = a.id_siswa AND su.unit_id = 1 AND su.status = 1)
+                        OR NOT EXISTS (SELECT 1 FROM master_siswa_unit su WHERE su.siswa_id = a.id_siswa))
+                       AND NOT EXISTS (SELECT 1 FROM kelas_siswa ks
+                                       WHERE ks.id_siswa = a.id_siswa AND ks.unit_id = 1
+                                         AND ks.id_tp = $id_tp AND ks.id_smt = $id_smt)
+                     ) OR (
+                       EXISTS (SELECT 1 FROM master_siswa_unit su
+                               WHERE su.siswa_id = a.id_siswa AND su.unit_id = 2 AND su.status = 1)
+                       AND NOT EXISTS (SELECT 1 FROM kelas_siswa ks
+                                       WHERE ks.id_siswa = a.id_siswa AND ks.unit_id = 2
+                                         AND ks.id_tp = $id_tp AND ks.id_smt = $id_smt)
+                     ) LIMIT 1"
+                )->row();
+                if ($perlu) {
+                    $semua = $db->query(
+                        "SELECT a.id_siswa FROM master_siswa a
+                         JOIN buku_induk u ON u.id_siswa = a.id_siswa AND u.status = 1"
+                    )->result_array();
+                    foreach ($semua as $s) {
+                        siswa_kelas_pastikan((int) $s['id_siswa'], $id_tp, $id_smt);
+                    }
+                }
+            }
         }
 
         $db->db_debug = $debug;

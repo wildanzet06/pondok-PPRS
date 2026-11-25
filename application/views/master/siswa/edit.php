@@ -252,6 +252,12 @@ if (!file_exists(FCPATH . $siswa->foto)) {
                                     }
                                     $jilid_aktif = unit_siswa_jilid($siswa->id_siswa);
                                     $id_unit_tpq = (int) unit_id_tpq();
+                                    $id_unit_mts = (int) unit_id_mts();
+                                    $id_unit_madin = (int) unit_id_madin();
+                                    $kelas_mts_aktif = function_exists('siswa_kelas_kode')
+                                        ? siswa_kelas_kode($siswa->id_siswa, 'mts') : '';
+                                    $kelas_madin_aktif = function_exists('siswa_kelas_kode')
+                                        ? siswa_kelas_kode($siswa->id_siswa, 'madin') : '';
                                     ?>
                                     <div class="form-group row">
                                         <div class="col-md-4 mb-sm-0">
@@ -270,6 +276,37 @@ if (!file_exists(FCPATH . $siswa->foto)) {
                                                 Centang lebih dari satu untuk murid dobel. Perubahan unit otomatis
                                                 menyesuaikan akses dan tagihan SPP.
                                             </small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row" id="baris-kelas-mts-siswa">
+                                        <div class="col-md-4 mb-sm-0">
+                                            <label for="kelas_mts" class="control-label">Kelas MTs</label>
+                                        </div>
+                                        <div class="col-md-8 mb-sm-0">
+                                            <select class="form-control" id="kelas_mts" name="kelas_mts">
+                                                <?php foreach (kelas_daftar('mts') as $k): ?>
+                                                    <option value="<?= html_escape($k['kode']) ?>"
+                                                        <?= $k['kode'] === $kelas_mts_aktif ? 'selected' : '' ?>>
+                                                        <?= html_escape($k['nama']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <small class="form-text text-muted">Kelas langsung berubah di Daftar Siswa.</small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group row" id="baris-kelas-madin-siswa">
+                                        <div class="col-md-4 mb-sm-0">
+                                            <label for="kelas_madin" class="control-label">Kelas Madin</label>
+                                        </div>
+                                        <div class="col-md-8 mb-sm-0">
+                                            <select class="form-control" id="kelas_madin" name="kelas_madin">
+                                                <option value="">Pilih kelas Madin</option>
+                                                <?php foreach (kelas_daftar('madin') as $k): ?>
+                                                    <option value="<?= html_escape($k['kode']) ?>"
+                                                        <?= $k['kode'] === $kelas_madin_aktif ? 'selected' : '' ?>>
+                                                        <?= html_escape($k['nama']) ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                            <small class="form-text text-muted">Putra 1-3 dan Putri 1-3.</small>
                                         </div>
                                     </div>
                                     <div class="form-group row" id="baris-jilid-siswa">
@@ -498,10 +535,19 @@ if (!file_exists(FCPATH . $siswa->foto)) {
     var idSiswa = '<?=$siswa->id_siswa?>';
     var src = '<?=$fotoSiswa?>';
     var idUnitTpq = <?=$id_unit_tpq?>;
+    var idUnitMts = <?=$id_unit_mts?>;
+    var idUnitMadin = <?=$id_unit_madin?>;
 
     function sinkronJilidSiswa() {
         var tpqDicentang = $('#siswa input.unit-siswa-checkbox[value="' + idUnitTpq + '"]').is(':checked');
         $('#baris-jilid-siswa').toggle(tpqDicentang);
+    }
+
+    function sinkronKelasSiswa() {
+        var mtsDicentang = $('#siswa input.unit-siswa-checkbox[value="' + idUnitMts + '"]').is(':checked');
+        var madinDicentang = $('#siswa input.unit-siswa-checkbox[value="' + idUnitMadin + '"]').is(':checked');
+        $('#baris-kelas-mts-siswa').toggle(mtsDicentang);
+        $('#baris-kelas-madin-siswa').toggle(madinDicentang);
     }
 
     function naikJilidSiswa() {
@@ -525,7 +571,11 @@ if (!file_exists(FCPATH . $siswa->foto)) {
     $(document).ready(function () {
         ajaxcsrf();
         sinkronJilidSiswa();
-        $('#siswa input.unit-siswa-checkbox').on('change', sinkronJilidSiswa);
+        sinkronKelasSiswa();
+        $('#siswa input.unit-siswa-checkbox').on('change', function () {
+            sinkronJilidSiswa();
+            sinkronKelasSiswa();
+        });
 
         $('.tahun').datetimepicker({
             icons:

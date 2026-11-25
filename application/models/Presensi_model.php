@@ -204,12 +204,18 @@ class Presensi_model extends CI_Model {
             ? '(COALESCE(mk.unit_id, 0) IN (0, ' . $id_unit . '))'
             : 'mk.unit_id = ' . $id_unit;
 
-        $sql = "SELECT DISTINCT mk.id_kelas, mk.nama_kelas, mk.unit_id
-                FROM kelas_siswa ks
-                JOIN master_kelas mk ON mk.id_kelas = ks.id_kelas
-                WHERE ks.id_tp = ? AND ks.id_smt = ? AND " . $syarat_unit . "
-                ORDER BY mk.nama_kelas ASC";
-        $hasil = $this->db->query($sql, array($id_tp, $id_smt))->result();
+        $hasil = array();
+        // Madin/TPQ memakai kelas virtual agar presensi tetap satu grup
+        // ("Seluruh santri" / per jilid), walaupun di /datasiswa siswa sudah
+        // dikelompokkan ke kelas Madin Putra/Putri.
+        if ($unit === 'mts') {
+            $sql = "SELECT DISTINCT mk.id_kelas, mk.nama_kelas, mk.unit_id
+                    FROM kelas_siswa ks
+                    JOIN master_kelas mk ON mk.id_kelas = ks.id_kelas
+                    WHERE ks.id_tp = ? AND ks.id_smt = ? AND " . $syarat_unit . "
+                    ORDER BY mk.nama_kelas ASC";
+            $hasil = $this->db->query($sql, array($id_tp, $id_smt))->result();
+        }
 
         if ($unit !== 'mts') {
             foreach ($this->virtual_kelas_semua($unit) as $k) {

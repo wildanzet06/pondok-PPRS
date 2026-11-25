@@ -14,9 +14,9 @@
     .siswa-filter { display: flex; align-items: center; gap: .4rem; min-width: 0; }
     .siswa-filter > label { margin: 0; white-space: nowrap; font-size: .875rem; color: #495057; }
     .siswa-filter > .form-control { flex: 1 1 auto; width: auto; min-width: 7.5rem; }
-    #baris-jilid { display: none; }
-    #baris-jilid.tpq { display: flex; }
-    #atur-jilid { flex: 0 0 auto; white-space: nowrap; }
+    #baris-jilid, #baris-kelas { display: none; }
+    #baris-jilid.tpq, #baris-kelas.mts, #baris-kelas.madin { display: flex; }
+    #atur-jilid, #atur-kelas { flex: 0 0 auto; white-space: nowrap; }
 
     .siswa-search { max-width: 380px; margin-left: auto; }
     .siswa-search .input-group-text { background: #fff; }
@@ -38,18 +38,18 @@
             font-size: .78rem;
         }
         .siswa-atas .siswa-search { flex: 1 1 100%; max-width: none; margin-left: 0; }
-        #baris-jilid { flex: 1 1 100%; }
+        #baris-jilid, #baris-kelas { flex: 1 1 100%; }
         .dataTables_filter { text-align: left !important; }
         .dataTables_length { margin-bottom: 0; }
     }
-    .jilid-group td {
+    .jilid-group td, .kelas-group td {
         background: #e9ecef;
         color: #495057;
         font-weight: 600;
         padding: .4rem .75rem;
         border-top: 1px solid #dee2e6;
     }
-    .jilid-group:first-child td { border-top: 0; }
+    .jilid-group:first-child td, .kelas-group:first-child td { border-top: 0; }
 </style><div class="content-wrapper bg-white pt-4">
     <section class="content-header">
         <div class="container-fluid">
@@ -83,9 +83,11 @@
                     <div class="alert alert-light border small mb-3">
                         Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
                         Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
-                        tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa
-                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid. Hanya di tab TPQ, tombol
-                        <b>setting</b> mengubah label jilid dan filter <b>Jilid</b> menampilkan satu kelompok saja.
+                        tab Madin/TPQ hanya berisi murid tanpa unit MTs. Siswa langsung ditempatkan ke
+                        kelas yang dipilih di form, lalu otomatis dikelompokkan di halaman ini.
+                        Tab <b>MTs</b> dan <b>Madin</b> memakai filter <b>Kelas</b> dan tombol
+                        <b>setting</b> untuk mengubah nama/urutan kelas (Madin: Putra 1-3, Putri 1-3).
+                        Tab <b>TPQ</b> memakai filter <b>Jilid</b> dan setting nama jilid.
                     </div>
                     <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
@@ -168,6 +170,17 @@
                                             <i class="fas fa-cog"></i><span class="ml-1">setting</span>
                                         </button>
                                     </div>
+                                    <div class="siswa-filter" id="baris-kelas">
+                                        <label for="kelas-filter">Kelas</label>
+                                        <select id="kelas-filter" class="form-control form-control-sm">
+                                            <option value="">Semua Kelas</option>
+                                        </select>
+                                        <button type="button" id="atur-kelas"
+                                                class="btn btn-sm btn-outline-primary"
+                                                title="Atur nama dan urutan kelas">
+                                            <i class="fas fa-cog"></i><span class="ml-1">setting</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-12 mb-3">
@@ -182,7 +195,7 @@
                                             <th class="align-middle text-center p-0">No.</th>
                                             <th class="align-middle">NAMA & UNIT</th>
                                             <th class="align-middle">NIS & NISN</th>
-                                            <th class="align-middle text-center">ROMBEL</th>
+                                            <th class="align-middle text-center">KELAS</th>
                                             <th class="align-middle text-center p-0">Aksi</th>
                                         </tr>
                                         </thead>
@@ -382,6 +395,33 @@
                         </small>
                     </div>
                 </div>
+                <div class="row mb-3" id="baris-kelas-mts-siswa">
+                    <div class="col-md-4 col-sm-offset-4">
+                        <label for="kelas_mts">Kelas MTs :</label>
+                    </div>
+                    <div class="col-md-8 col-sm-offset-8">
+                        <select class="form-control" id="kelas_mts" name="kelas_mts">
+                            <?php foreach (kelas_daftar('mts') as $k): ?>
+                                <option value="<?= html_escape($k['kode']) ?>"><?= html_escape($k['nama']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="form-text text-muted">Siswa langsung masuk kelas ini di Daftar Siswa.</small>
+                    </div>
+                </div>
+                <div class="row mb-3" id="baris-kelas-madin-siswa">
+                    <div class="col-md-4 col-sm-offset-4">
+                        <label for="kelas_madin">Kelas Madin :</label>
+                    </div>
+                    <div class="col-md-8 col-sm-offset-8">
+                        <select class="form-control" id="kelas_madin" name="kelas_madin">
+                            <option value="">Pilih kelas Madin</option>
+                            <?php foreach (kelas_daftar('madin') as $k): ?>
+                                <option value="<?= html_escape($k['kode']) ?>"><?= html_escape($k['nama']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <small class="form-text text-muted">Putra 1-3 dan Putri 1-3; kosong = kelas pertama.</small>
+                    </div>
+                </div>
                 <div class="row mb-3" id="baris-jilid-siswa">
                     <div class="col-md-4 col-sm-offset-4">
                         <label for="jilid">Jilid TPQ :</label>
@@ -464,6 +504,62 @@
     </div>
 </div>
 
+<div class="modal fade" id="kelasModal" tabindex="-1" role="dialog" aria-labelledby="kelasModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="kelasModalLabel">Atur Nama Kelas</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border small mb-3">
+                    <b>Kode</b> adalah nilai yang tersimpan di data siswa. <b>Nama tampil</b> dipakai di
+                    header pengelompok dan filter. Menambah kode baru juga membuat kelas baru.
+                </div>
+                <table class="table table-sm table-bordered mb-3" id="tabel-kelas">
+                    <thead class="thead-light">
+                    <tr>
+                        <th style="width:35%">Kode</th>
+                        <th>Nama tampil</th>
+                        <th style="width:100px">Urutan</th>
+                        <th style="width:55px"></th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-4 mb-2">
+                        <label>Kode baru</label>
+                        <input id="kelas-kode-baru" class="form-control form-control-sm" placeholder="Misal: 8">
+                    </div>
+                    <div class="form-group col-md-5 mb-2">
+                        <label>Nama tampil</label>
+                        <input id="kelas-nama-baru" class="form-control form-control-sm" placeholder="Misal: Kelas 8">
+                    </div>
+                    <div class="form-group col-md-1 mb-2">
+                        <label>Urutan</label>
+                        <input id="kelas-urutan-baru" type="number" class="form-control form-control-sm" value="99">
+                    </div>
+                    <div class="form-group col-md-2 mb-2">
+                        <button type="button" id="kelas-tambah" class="btn btn-sm btn-secondary btn-block">
+                            <i class="fas fa-plus mr-1"></i>Tambah
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                <button type="button" id="kelas-simpan" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= form_open('', array('id' => 'pager')); ?>
 <input type="hidden" id="pager-page" name="page" value="1">
 <input type="hidden" id="pager-limit" name="limit" value="10">
@@ -480,18 +576,36 @@
     let jilidAktif = '';
     let jilidDaftar = [];
     let jilidDihapus = [];
+    let kelasAktif = '';
+    let kelasDaftar = [];
+    let kelasDihapus = [];
     const idUnitTpq = <?= (int) unit_id_tpq() ?>;
+    const idUnitMts = <?= (int) unit_id_mts() ?>;
+    const idUnitMadin = <?= (int) unit_id_madin() ?>;
 
     function sinkronJilidSiswa() {
         const tpqDicentang = $('#formsiswa input.unit-siswa-checkbox[value="' + idUnitTpq + '"]').is(':checked');
         $('#baris-jilid-siswa').toggle(tpqDicentang);
     }
 
+    function sinkronKelasSiswa() {
+        const mtsDicentang = $('#formsiswa input.unit-siswa-checkbox[value="' + idUnitMts + '"]').is(':checked');
+        const madinDicentang = $('#formsiswa input.unit-siswa-checkbox[value="' + idUnitMadin + '"]').is(':checked');
+        $('#baris-kelas-mts-siswa').toggle(mtsDicentang);
+        $('#baris-kelas-madin-siswa').toggle(madinDicentang);
+    }
+
     $(document).ready(function () {
         ajaxcsrf();
         renderHeader();
+        muatJilid('');
+        muatKelas(unitAktif, '');
         sinkronJilidSiswa();
-        $('#formsiswa input.unit-siswa-checkbox').on('change', sinkronJilidSiswa);
+        sinkronKelasSiswa();
+        $('#formsiswa input.unit-siswa-checkbox').on('change', function () {
+            sinkronJilidSiswa();
+            sinkronKelasSiswa();
+        });
 
         $('#siswaUnitTabs a').on('click', function (e) {
             e.preventDefault();
@@ -503,8 +617,14 @@
                 $('#users-filter').val('1');
             }
             $('#baris-jilid').toggleClass('tpq', unitAktif === 'tpq');
+            $('#baris-kelas').toggleClass('mts', unitAktif === 'mts')
+                .toggleClass('madin', unitAktif === 'madin');
             if (unitAktif === 'tpq') {
                 muatJilid(jilidAktif);
+            } else {
+                kelasAktif = '';
+                $('#kelas-filter').val('');
+                muatKelas(unitAktif, '');
             }
             renderHeader();
             currentPage = 1;
@@ -581,6 +701,90 @@
             }).fail(function () {
                 tombol.prop('disabled', false);
                 swal.fire({title: 'ERROR', text: 'Gagal menyimpan nama jilid.', icon: 'error'});
+            });
+        });
+
+        $('#kelas-filter').on('change', function () {
+            kelasAktif = $(this).val();
+            currentPage = 1;
+            loadSiswa();
+        });
+
+        $('#atur-kelas').on('click', function () {
+            kelasDihapus = [];
+            muatKelas(unitAktif).done(function () {
+                $('#kelasModalLabel').text(unitAktif === 'madin'
+                    ? 'Atur Kelas Madin' : 'Atur Kelas MTs');
+                $('#kelasModal').modal('show');
+            });
+        });
+
+        $('#kelas-tambah').on('click', function () {
+            var kode = $.trim($('#kelas-kode-baru').val());
+            var nama = $.trim($('#kelas-nama-baru').val());
+            var urutan = parseInt($('#kelas-urutan-baru').val(), 10);
+            if (unitAktif === 'madin' && /^(putra|putri)\s*[123]$/i.test(kode)) {
+                swal.fire({title: 'Error', text: 'Enam kelas Madin (Putra/Putri 1-3) tidak bisa dihapus atau diganti.', icon: 'error'});
+                return;
+            }
+            if (kode === '' || nama === '') {
+                swal.fire({title: 'Error', text: 'Kode dan nama tampil wajib diisi.', icon: 'error'});
+                return;
+            }
+            var ada = false;
+            $.each(kelasDaftar, function (_, item) {
+                if (item.kode.toLowerCase() === kode.toLowerCase()) ada = true;
+            });
+            if (ada) {
+                swal.fire({title: 'Error', text: 'Kode itu sudah ada.', icon: 'error'});
+                return;
+            }
+            kelasDaftar.push({kode: kode, nama: nama, urutan: isNaN(urutan) ? 99 : urutan});
+            urutkanKelas();
+            renderTabelKelas();
+            $('#kelas-kode-baru, #kelas-nama-baru').val('');
+        });
+
+        $('#tabel-kelas').on('click', '.hapus-kelas', function () {
+            var kode = $(this).closest('tr').data('kode');
+            if (unitAktif === 'madin' && /^(putra|putri)\s*[123]$/i.test(kode)) {
+                swal.fire({title: 'Error', text: 'Enam kelas Madin (Putra/Putri 1-3) tidak bisa dihapus.', icon: 'error'});
+                return;
+            }
+            kelasDaftar = kelasDaftar.filter(function (item) { return item.kode !== kode; });
+            if (kelasDihapus.indexOf(kode) === -1) kelasDihapus.push(kode);
+            renderTabelKelas();
+        });
+
+        $('#kelas-simpan').on('click', function () {
+            var items = [];
+            $('#tabel-kelas tbody tr').each(function () {
+                var baris = $(this);
+                var kode = $.trim(baris.find('.kelas-kode').val());
+                var nama = $.trim(baris.find('.kelas-nama').val());
+                var urutan = parseInt(baris.find('.kelas-urutan').val(), 10);
+                if (kode !== '' && nama !== '') {
+                    items.push({kode: kode, nama: nama, urutan: isNaN(urutan) ? 0 : urutan});
+                }
+            });
+            var tombol = $(this).prop('disabled', true);
+            $.post(base_url + 'datasiswa/kelas_simpan', {
+                unit: unitAktif,
+                items: JSON.stringify(items),
+                hapus: JSON.stringify(kelasDihapus)
+            }).done(function (res) {
+                tombol.prop('disabled', false);
+                if (!res.status) {
+                    swal.fire({title: 'Gagal', text: res.text || 'Gagal menyimpan.', icon: 'error'});
+                    return;
+                }
+                $('#kelasModal').modal('hide');
+                muatKelas(unitAktif, kelasAktif);
+                loadSiswa();
+                swal.fire({title: 'Tersimpan', text: res.text, icon: 'success', timer: 1500, showConfirmButton: false});
+            }).fail(function () {
+                tombol.prop('disabled', false);
+                swal.fire({title: 'ERROR', text: 'Gagal menyimpan kelas.', icon: 'error'});
             });
         });
 
@@ -837,14 +1041,57 @@
         });
     }
 
+    function urutkanKelas() {
+        kelasDaftar.sort(function (a, b) {
+            var ua = parseInt(a.urutan, 10) || 0;
+            var ub = parseInt(b.urutan, 10) || 0;
+            if (ua !== ub) return ua - ub;
+            return String(a.kode).localeCompare(String(b.kode), undefined, {numeric: true});
+        });
+    }
+
+    function renderTabelKelas() {
+        var html = '';
+        $.each(kelasDaftar, function (_, item) {
+            html += '<tr data-kode="' + escAttr(item.kode) + '">' +
+                '<td><input class="form-control form-control-sm kelas-kode" readonly value="' + escAttr(item.kode) + '"></td>' +
+                '<td><input class="form-control form-control-sm kelas-nama" value="' + escAttr(item.nama) + '"></td>' +
+                '<td><input type="number" class="form-control form-control-sm kelas-urutan" value="' +
+                (parseInt(item.urutan, 10) || 0) + '"></td>' +
+                '<td class="text-center"><button type="button" class="btn btn-xs btn-danger hapus-kelas" ' +
+                'title="Hapus kelas"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+        });
+        if (html === '') {
+            html = '<tr><td colspan="4" class="text-center text-muted">Belum ada kelas.</td></tr>';
+        }
+        $('#tabel-kelas tbody').html(html);
+    }
+
+    function muatKelas(unit, pilih) {
+        return $.getJSON(base_url + 'datasiswa/kelas_data', {unit: unit}).done(function (res) {
+            kelasDaftar = res.daftar || [];
+            urutkanKelas();
+            var saat = (pilih !== undefined && pilih !== null) ? pilih : ($('#kelas-filter').val() || '');
+            var html = '<option value="">Semua Kelas</option>' +
+                '<option value="__tanpa">Tanpa Kelas</option>';
+            $.each(kelasDaftar, function (_, item) {
+                html += '<option value="' + escAttr(item.kode) + '">' + esc(item.nama) + '</option>';
+            });
+            $('#kelas-filter').html(html).val(saat);
+            if ($('#kelas-filter').val() === null) $('#kelas-filter').val('');
+            renderTabelKelas();
+        });
+    }
+
     function renderHeader() {
         var head = '<tr>' +
             '<th height="50" class="align-middle text-center p-0"><input class="select_all" type="checkbox"></th>' +
             '<th class="align-middle text-center p-0">No.</th>' +
             '<th class="align-middle">NAMA & UNIT</th>' +
             '<th class="align-middle">NIS & NISN</th>';
-        if (unitAktif === 'mts') {
-            head += '<th class="align-middle text-center">ROMBEL</th>';
+        if (unitAktif === 'mts' || unitAktif === 'madin') {
+            head += '<th class="align-middle text-center">KELAS</th>';
         } else if (unitAktif === 'tpq') {
             head += '<th class="align-middle text-center">JILID</th>';
         }
@@ -864,8 +1111,10 @@
         var filter = '&filter=' + $('#users-filter').val();
         var paramJilid = unitAktif === 'tpq'
             ? '&jilid=' + encodeURIComponent(jilidAktif || '') : '';
+        var paramKelas = (unitAktif === 'mts' || unitAktif === 'madin')
+            ? '&kelas=' + encodeURIComponent(kelasAktif || '') : '';
         var dataPost = $('#pager').serialize() + cari + filter
-            + '&unit=' + encodeURIComponent(unitAktif) + paramJilid;
+            + '&unit=' + encodeURIComponent(unitAktif) + paramJilid + paramKelas;
         console.log('post', dataPost);
         if (siswaXhr) {
             siswaXhr.abort();
@@ -913,17 +1162,26 @@
             return '<span class="badge ' + warna + ' mr-1">' + esc(label) + '</span>';
         }
 
-        // Hitungjumlah per jilid pada halaman ini untuk header pengelompok.
+        // Hitung jumlah per kelompok pada halaman ini untuk header pengelompok.
+        // MTs/Madin dikelompokkan per kelas; TPQ per jilid.
+        var pakaiKelas = unitAktif === 'mts' || unitAktif === 'madin';
         var kunciJilid = function (siswa) {
             return (siswa.jilid === '' || siswa.jilid == null) ? '__tanpa' : String(siswa.jilid);
         };
-        var hitungJilid = {};
-        var jilidSebelumnya = null;
-        var colspanPenuh = unitAktif === 'madin' ? 5 : 6;
-        if (unitAktif === 'tpq') {
+        var kunciKelas = function (siswa) {
+            return (siswa.kelas_kode === '' || siswa.kelas_kode == null)
+                ? '__tanpa' : String(siswa.kelas_kode);
+        };
+        var kunciGrup = function (siswa) {
+            return unitAktif === 'tpq' ? kunciJilid(siswa) : kunciKelas(siswa);
+        };
+        var hitungGrup = {};
+        var grupSebelumnya = null;
+        var colspanPenuh = 6;
+        if (unitAktif === 'tpq' || pakaiKelas) {
             $.each(data.lists, function (_, siswa) {
-                var kunci = kunciJilid(siswa);
-                hitungJilid[kunci] = (hitungJilid[kunci] || 0) + 1;
+                var kunci = kunciGrup(siswa);
+                hitungGrup[kunci] = (hitungGrup[kunci] || 0) + 1;
             });
         }
 
@@ -941,10 +1199,11 @@
                     : '<span class="badge badge-success">Aktif</span>';
 
                 var kolomTambahan = '';
-                if (unitAktif === 'mts') {
+                if (pakaiKelas) {
+                    var namaKelas = siswa.kelas_nama || siswa.kelas_kode || '';
                     kolomTambahan = '<td class="align-middle text-center">' +
-                        (siswa.nama_kelas
-                            ? '<span class="badge badge-info">' + esc(siswa.nama_kelas) + '</span>'
+                        (namaKelas !== ''
+                            ? '<span class="badge badge-info">' + esc(namaKelas) + '</span>'
                             : '<span class="text-muted">-</span>') + '</td>';
                 } else if (unitAktif === 'tpq') {
                     kolomTambahan = '<td class="align-middle text-center">' +
@@ -953,23 +1212,28 @@
                             : '<span class="text-muted">-</span>') + '</td>';
                 }
 
-                if (unitAktif === 'tpq') {
-                    var kunci = kunciJilid(siswa);
-                    if (kunci !== jilidSebelumnya) {
-                        jilidSebelumnya = kunci;
-                        var namaJilid = siswa.jilid_nama || '';
-                        var labelJilid;
+                if (unitAktif === 'tpq' || pakaiKelas) {
+                    var kunci = kunciGrup(siswa);
+                    if (kunci !== grupSebelumnya) {
+                        grupSebelumnya = kunci;
+                        var labelGrup;
                         if (kunci === '__tanpa') {
-                            labelJilid = 'Tanpa Jilid';
-                        } else if (namaJilid === '' || namaJilid === kunci) {
-                            labelJilid = /^\d+$/.test(kunci) ? 'Jilid ' + kunci : esc(kunci);
+                            labelGrup = pakaiKelas ? 'Tanpa Kelas' : 'Tanpa Jilid';
+                        } else if (pakaiKelas) {
+                            labelGrup = esc(siswa.kelas_nama || siswa.kelas_kode);
                         } else {
-                            labelJilid = esc(namaJilid);
+                            var namaJilid = siswa.jilid_nama || '';
+                            if (namaJilid === '' || namaJilid === kunci) {
+                                labelGrup = /^\d+$/.test(kunci) ? 'Jilid ' + kunci : esc(kunci);
+                            } else {
+                                labelGrup = esc(namaJilid);
+                            }
                         }
-                        html += '<tr class="jilid-group"><td colspan="' + colspanPenuh + '">' +
-                            '<i class="fas fa-layer-group mr-1"></i>' + labelJilid +
+                        html += '<tr class="' + (pakaiKelas ? 'kelas-group' : 'jilid-group') +
+                            '"><td colspan="' + colspanPenuh + '">' +
+                            '<i class="fas fa-layer-group mr-1"></i>' + labelGrup +
                             '<span class="badge badge-light ml-2">' +
-                            hitungJilid[kunci] + ' siswa</span>' +
+                            hitungGrup[kunci] + ' siswa</span>' +
                             '</td></tr>';
                     }
                 }
