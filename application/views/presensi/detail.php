@@ -9,7 +9,7 @@ $warna = array('H' => 'success', 'I' => 'info', 'S' => 'warning', 'A' => 'danger
                     <h1><i class="fas fa-user-clock text-primary"></i> Detail Presensi</h1>
                 </div>
                 <div class="col-sm-4 text-right">
-                    <a href="<?= site_url('presensi/rekap?' . http_build_query(array('kelas' => $kelas_id, 'bulan' => $bulan, 'tahun' => $tahun))); ?>"
+                    <a href="<?= site_url('presensi/rekap?' . http_build_query(array('unit' => $unit, 'kelas' => $kelas_id, 'bulan' => $bulan, 'tahun' => $tahun))); ?>"
                        class="btn btn-secondary btn-sm"><i class="fas fa-arrow-left"></i> Kembali ke Rekap</a>
                 </div>
             </div>
@@ -25,6 +25,7 @@ $warna = array('H' => 'success', 'I' => 'info', 'S' => 'warning', 'A' => 'danger
                     <div class="text-muted mb-3">NIS <?= html_escape($siswa->nis); ?></div>
 
                     <form method="get" action="<?= site_url('presensi/detail/' . (int) $siswa->id_siswa); ?>" class="form-inline" data-auto-filter>
+                        <input type="hidden" name="unit" value="<?= html_escape($unit); ?>">
                         <input type="hidden" name="kelas" value="<?= (int) $kelas_id; ?>">
                         <select name="bulan" class="form-control form-control-sm mr-2">
                             <?php foreach ($daftar_bulan as $i => $nm): ?>

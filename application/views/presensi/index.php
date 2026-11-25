@@ -1,5 +1,25 @@
 <?php
 $tgl_label = date('d/m/Y', strtotime($tanggal));
+
+// Tab unit menjaga filter tanggal/jam. Kelas hanya dibawa bila memang
+// milik unit yang sedang dibuka.
+$query_dasar = isset($_GET) && is_array($_GET) ? $_GET : array();
+unset($query_dasar['unit'], $query_dasar['kelas']);
+$tab_url = function ($tab) use ($query_dasar, $kelas_id, $kelas_unit) {
+    $q = $query_dasar;
+    if ($kelas_id && $kelas_unit === $tab) {
+        $q['kelas'] = $kelas_id;
+    }
+    $q['unit'] = $tab;
+    return site_url('presensi') . '?' . http_build_query($q);
+};
+
+$unit_id_key = array(
+    (int) (function_exists('unit_id_mts') ? unit_id_mts() : 1)   => 'mts',
+    (int) (function_exists('unit_id_madin') ? unit_id_madin() : 2) => 'madin',
+    (int) (function_exists('unit_id_tpq') ? unit_id_tpq() : 3)   => 'tpq'
+);
+$unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
 ?>
 <style>
     /* Tombol status H / I / S / A (tanpa JavaScript tambahan) */
@@ -27,7 +47,8 @@ $tgl_label = date('d/m/Y', strtotime($tanggal));
                     <h1><i class="fas fa-user-check text-primary"></i> Presensi Kelas</h1>
                 </div>
                 <div class="col-sm-5 text-right">
-                    <a href="<?= site_url('presensi/rekap'); ?>" class="btn btn-secondary btn-sm">
+                    <a href="<?= site_url('presensi/rekap?' . http_build_query(array('unit' => $unit))); ?>"
+                       class="btn btn-secondary btn-sm">
                         <i class="fas fa-chart-bar"></i> Rekap Presensi
                     </a>
                 </div>
@@ -51,16 +72,36 @@ $tgl_label = date('d/m/Y', strtotime($tanggal));
                 </div>
             <?php endif; ?>
 
+            <div class="alert alert-light border small mb-3">
+                Pilih unit <b>MTs / Madin / TPQ</b>. Kelas Madin dan TPQ otomatis dibentuk dari
+                <b>Unit Murid</b>; kelas TPQ dikelompokkan menurut <b>jilid</b>.
+            </div>
+
+            <ul class="nav nav-tabs unit-tabs mb-3" id="presensiUnitTabs" role="tablist">
+                <?php foreach (array('mts', 'madin', 'tpq') as $tab): ?>
+                    <li class="nav-item">
+                        <a class="nav-link unit-tab-<?= $tab; ?> <?= $unit === $tab ? 'active' : ''; ?>"
+                           href="<?= html_escape($tab_url($tab)); ?>" role="tab"
+                           aria-selected="<?= $unit === $tab ? 'true' : 'false'; ?>">
+                            <i class="fas <?= unit_ikon($tab); ?>"></i> <?= $unit_label[$tab]; ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
             <!-- Pilih sesi pelajaran -->
             <div class="card card-outline card-primary">
                 <div class="card-body">
                     <form method="get" action="<?= site_url('presensi'); ?>" class="form-row align-items-end" data-auto-filter>
+                        <input type="hidden" name="unit" value="<?= html_escape($unit); ?>">
                         <div class="form-group col-6 col-md-3">
                             <label>Kelas</label>
                             <select name="kelas" class="form-control" required>
                                 <option value="">-- Pilih kelas --</option>
                                 <?php foreach ($daftar_kelas as $k): ?>
-                                    <option value="<?= (int) $k->id_kelas; ?>" <?= ($kelas_id == $k->id_kelas) ? 'selected' : ''; ?>>
+                                    <?php $k_unit = isset($unit_id_key[(int) $k->unit_id]) ? $unit_id_key[(int) $k->unit_id] : 'mts'; ?>
+                                    <option value="<?= (int) $k->id_kelas; ?>" data-unit="<?= $k_unit; ?>"
+                                            <?= ($kelas_id == $k->id_kelas) ? 'selected' : ''; ?>>
                                         <?= html_escape($k->nama_kelas); ?>
                                     </option>
                                 <?php endforeach; ?>
@@ -85,7 +126,7 @@ $tgl_label = date('d/m/Y', strtotime($tanggal));
                         <div class="mt-1">
                             <small class="text-muted">Sesi yang sudah tercatat pada tanggal ini:</small>
                             <?php foreach ($sesi_hari as $sh): ?>
-                                <a href="<?= site_url('presensi?' . http_build_query(array('kelas' => $kelas_id, 'tanggal' => $tanggal, 'jam' => $sh->jam_ke))); ?>"
+                                <a href="<?= site_url('presensi?' . http_build_query(array('unit' => $unit, 'kelas' => $kelas_id, 'tanggal' => $tanggal, 'jam' => $sh->jam_ke))); ?>"
                                    class="badge badge-<?= ($sh->jam_ke == $jam) ? 'primary' : 'secondary'; ?> p-2 ml-1">
                                     Jam <?= (int) $sh->jam_ke; ?><?= $sh->mapel_nama ? ' &middot; ' . html_escape($sh->mapel_nama) : ''; ?>
                                 </a>
@@ -97,6 +138,7 @@ $tgl_label = date('d/m/Y', strtotime($tanggal));
 
             <?php if ($kelas_id && !empty($roster)): ?>
             <?= form_open('presensi/simpan', array('id' => 'formPresensi')); ?>
+                <input type="hidden" name="unit" value="<?= html_escape($unit); ?>">
                 <input type="hidden" name="kelas" value="<?= (int) $kelas_id; ?>">
                 <input type="hidden" name="tanggal" value="<?= html_escape($tanggal); ?>">
                 <input type="hidden" name="jam" value="<?= (int) $jam; ?>">
@@ -198,6 +240,7 @@ $tgl_label = date('d/m/Y', strtotime($tanggal));
 
             <?php if ($sesi): ?>
                 <?= form_open('presensi/hapus_sesi/' . (int) $sesi->id, array('id' => 'formHapus', 'style' => 'display:none')); ?>
+                <input type="hidden" name="unit" value="<?= html_escape($unit); ?>">
                 <?= form_close(); ?>
             <?php endif; ?>
 

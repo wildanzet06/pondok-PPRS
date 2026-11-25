@@ -90,6 +90,21 @@ class Presensi extends CI_Controller {
         return array($dari, $sampai, $bulan, $tahun);
     }
 
+    /** Unit aktif dari URL (atau form). Default MTs untuk data lama. */
+    private function _unit($sumber = 'get') {
+        $nilai = $sumber === 'post'
+            ? $this->input->post('unit', true)
+            : $this->input->get('unit', true);
+        $nilai = strtolower((string) $nilai);
+        return in_array($nilai, array('mts', 'madin', 'tpq'), true) ? $nilai : 'mts';
+    }
+
+    private function _url($rute, $query) {
+        return $rute . '?' . http_build_query(array_filter($query, function ($v) {
+            return $v !== null && $v !== '';
+        }));
+    }
+
     // =====================================================================
     // ISI PRESENSI
     // =====================================================================
@@ -97,6 +112,7 @@ class Presensi extends CI_Controller {
         $tp  = $this->dashboard->getTahunActive();
         $smt = $this->dashboard->getSemesterActive();
 
+        $unit     = $this->_unit();
         $kelas_id = (int) $this->input->get('kelas');
         $tanggal  = (string) $this->input->get('tanggal');
         $jam      = (int) $this->input->get('jam');
@@ -105,19 +121,22 @@ class Presensi extends CI_Controller {
         // Jumlah jam mengikuti pengaturan jadwal kelas yang dipilih.
         $maks_jam    = self::MAKS_JAM;
         $kelas_valid = false;
-        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
+        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt, $unit)) {
             $kelas_valid = true;
             $maks_jam    = $this->Presensi_model->jam_maks($kelas_id, $tp->id_tp, $smt->id_smt, self::MAKS_JAM);
         }
         if ($jam < 1 || $jam > $maks_jam) $jam = $maks_jam;
 
         $data = $this->_admin_data('Presensi Kelas');
-        $data['daftar_kelas']  = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt);
+        $data['unit']          = $unit;
+        $data['unit_pilihan']  = function_exists('unit_pilihan') ? unit_pilihan() : array(1 => 'MTs', 2 => 'Madin', 3 => 'TPQ');
+        $data['daftar_kelas']  = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt, $unit);
         $data['status_ref']    = $this->Presensi_model->status;
         $data['maks_jam']      = $maks_jam;
         $data['mapel_tersedia'] = $this->Presensi_model->mapel_tersedia();
         $data['daftar_mapel']  = $this->Presensi_model->daftar_mapel();
         $data['kelas_id']      = $kelas_id;
+        $data['kelas_unit']    = $kelas_id ? $this->Presensi_model->unit_kelas($kelas_id) : '';
         $data['tanggal']       = $tanggal;
         $data['jam']           = $jam;
         $data['roster']        = array();
@@ -127,13 +146,13 @@ class Presensi extends CI_Controller {
         $data['nama_kelas']    = '';
 
         if ($kelas_valid) {
-            $data['roster']     = $this->Presensi_model->roster($kelas_id, $tp->id_tp, $smt->id_smt);
+            $data['roster']     = $this->Presensi_model->roster($kelas_id, $tp->id_tp, $smt->id_smt, $unit);
             $data['sesi']       = $this->Presensi_model->get_sesi($kelas_id, $tanggal, $jam);
             $data['tersimpan']  = $data['sesi'] ? $this->Presensi_model->status_sesi($data['sesi']->id) : array();
             $data['sesi_hari']  = $this->Presensi_model->sesi_hari($kelas_id, $tanggal);
             $data['nama_kelas'] = $this->Presensi_model->nama_kelas($kelas_id);
         } elseif ($kelas_id) {
-            $this->session->set_flashdata('error', 'Kelas tidak ditemukan pada tahun pelajaran/semester aktif.');
+            $this->session->set_flashdata('error', 'Kelas tidak ditemukan pada unit/tahun pelajaran/semester aktif.');
             $data['kelas_id'] = 0;
         }
 
@@ -146,17 +165,20 @@ class Presensi extends CI_Controller {
         $tp  = $this->dashboard->getTahunActive();
         $smt = $this->dashboard->getSemesterActive();
 
+        $unit     = $this->_unit('post');
         $kelas_id = (int) $this->input->post('kelas');
         $tanggal  = (string) $this->input->post('tanggal');
         $jam      = (int) $this->input->post('jam');
         $mapel_id = (int) $this->input->post('mapel_id');
         $mapel_tx = trim((string) $this->input->post('mapel_nama'));
 
-        $balik = 'presensi?' . http_build_query(array('kelas' => $kelas_id, 'tanggal' => $tanggal, 'jam' => $jam));
+        $balik = $this->_url('presensi', array(
+            'unit' => $unit, 'kelas' => $kelas_id, 'tanggal' => $tanggal, 'jam' => $jam
+        ));
 
         if (!$this->_tanggal_valid($tanggal)) {
             $this->session->set_flashdata('error', 'Tanggal tidak valid.');
-            redirect('presensi');
+            redirect($this->_url('presensi', array('unit' => $unit)));
             return;
         }
         if ($tanggal > date('Y-m-d')) {
@@ -164,9 +186,9 @@ class Presensi extends CI_Controller {
             redirect($balik);
             return;
         }
-        if (!$this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
-            $this->session->set_flashdata('error', 'Kelas tidak valid.');
-            redirect('presensi');
+        if (!$this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt, $unit)) {
+            $this->session->set_flashdata('error', 'Kelas tidak valid untuk unit yang dipilih.');
+            redirect($this->_url('presensi', array('unit' => $unit)));
             return;
         }
 
@@ -191,8 +213,8 @@ class Presensi extends CI_Controller {
             $mapel_nama = mb_substr($mapel_tx, 0, 100);
         }
 
-        // Hanya siswa yang memang ada di kelas itu yang diterima
-        $roster = $this->Presensi_model->roster($kelas_id, $tp->id_tp, $smt->id_smt);
+        // Hanya siswa yang memang ada di kelas/unit itu yang diterima
+        $roster = $this->Presensi_model->roster($kelas_id, $tp->id_tp, $smt->id_smt, $unit);
         $status = (array) $this->input->post('status');
         $ket    = (array) $this->input->post('ket');
         $valid  = array_keys($this->Presensi_model->status);
@@ -233,17 +255,19 @@ class Presensi extends CI_Controller {
         }
         $this->_harus_post();
 
+        $unit = $this->_unit('post');
         $sesi = $this->Presensi_model->get_sesi_by_id($id);
         if ($sesi) {
             $this->Presensi_model->hapus_sesi($sesi->id);
             $this->session->set_flashdata('success', 'Presensi sesi tersebut dihapus.');
-            redirect('presensi?' . http_build_query(array(
-                'kelas' => $sesi->id_kelas, 'tanggal' => $sesi->tanggal, 'jam' => $sesi->jam_ke
+            redirect($this->_url('presensi', array(
+                'unit' => $unit, 'kelas' => $sesi->id_kelas,
+                'tanggal' => $sesi->tanggal, 'jam' => $sesi->jam_ke
             )));
             return;
         }
         $this->session->set_flashdata('error', 'Data tidak ditemukan.');
-        redirect('presensi');
+        redirect($this->_url('presensi', array('unit' => $unit)));
     }
 
     // =====================================================================
@@ -253,25 +277,31 @@ class Presensi extends CI_Controller {
         $tp  = $this->dashboard->getTahunActive();
         $smt = $this->dashboard->getSemesterActive();
 
+        $unit     = $this->_unit();
         $kelas_id = (int) $this->input->get('kelas');
         $bulan    = $this->input->get('bulan') ?: date('n');
         $tahun    = $this->input->get('tahun') ?: date('Y');
         list($dari, $sampai, $bulan, $tahun) = $this->_rentang($bulan, $tahun);
 
         $data = $this->_admin_data('Rekap Presensi');
-        $data['daftar_kelas'] = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt);
+        $data['unit']         = $unit;
+        $data['unit_pilihan'] = function_exists('unit_pilihan') ? unit_pilihan() : array(1 => 'MTs', 2 => 'Madin', 3 => 'TPQ');
+        $data['daftar_kelas'] = $this->Presensi_model->daftar_kelas($tp->id_tp, $smt->id_smt, $unit);
         $data['daftar_bulan'] = $this->Presensi_model->daftar_bulan;
-        $data['kelas_id'] = $kelas_id;
+        $data['kelas_id']   = $kelas_id;
+        $data['kelas_unit'] = $kelas_id ? $this->Presensi_model->unit_kelas($kelas_id) : '';
         $data['bulan']    = $bulan;
         $data['tahun']    = $tahun;
         $data['rekap']    = array();
         $data['jml_sesi'] = 0;
         $data['nama_kelas'] = '';
 
-        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
-            $data['rekap']      = $this->Presensi_model->rekap($kelas_id, $tp->id_tp, $smt->id_smt, $dari, $sampai);
+        if ($kelas_id && $this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt, $unit)) {
+            $data['rekap']      = $this->Presensi_model->rekap($kelas_id, $tp->id_tp, $smt->id_smt, $dari, $sampai, $unit);
             $data['jml_sesi']   = $this->Presensi_model->jumlah_sesi($kelas_id, $dari, $sampai);
             $data['nama_kelas'] = $this->Presensi_model->nama_kelas($kelas_id);
+        } elseif ($kelas_id) {
+            $data['kelas_id'] = 0;
         }
 
         $this->_render('presensi/rekap', $data);
@@ -283,6 +313,7 @@ class Presensi extends CI_Controller {
             show_error('Data siswa tidak ditemukan.', 404);
         }
 
+        $unit  = $this->_unit();
         $bulan = $this->input->get('bulan') ?: date('n');
         $tahun = $this->input->get('tahun') ?: date('Y');
         list($dari, $sampai, $bulan, $tahun) = $this->_rentang($bulan, $tahun);
@@ -290,6 +321,7 @@ class Presensi extends CI_Controller {
         $riwayat = $this->Presensi_model->riwayat_siswa($siswa->id_siswa, $dari, $sampai);
 
         $data = $this->_admin_data('Detail Presensi');
+        $data['unit']         = $unit;
         $data['siswa']        = $siswa;
         $data['riwayat']      = $riwayat;
         $data['hitung']       = $this->Presensi_model->hitung($riwayat);
@@ -309,14 +341,15 @@ class Presensi extends CI_Controller {
         $tp  = $this->dashboard->getTahunActive();
         $smt = $this->dashboard->getSemesterActive();
 
+        $unit     = $this->_unit();
         $kelas_id = (int) $this->input->get('kelas');
         list($dari, $sampai, $bulan, $tahun) = $this->_rentang($this->input->get('bulan') ?: date('n'), $this->input->get('tahun') ?: date('Y'));
 
-        if (!$this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt)) {
-            show_error('Kelas tidak valid.', 400);
+        if (!$this->Presensi_model->kelas_valid($kelas_id, $tp->id_tp, $smt->id_smt, $unit)) {
+            show_error('Kelas tidak valid untuk unit yang dipilih.', 400);
         }
 
-        $rows = $this->Presensi_model->rekap($kelas_id, $tp->id_tp, $smt->id_smt, $dari, $sampai);
+        $rows = $this->Presensi_model->rekap($kelas_id, $tp->id_tp, $smt->id_smt, $dari, $sampai, $unit);
         $baris = array();
         $no = 1;
         foreach ($rows as $r) {

@@ -1,3 +1,16 @@
+<?php
+$query_dasar = isset($_GET) && is_array($_GET) ? $_GET : array();
+unset($query_dasar['unit'], $query_dasar['kelas']);
+$tab_url = function ($tab) use ($query_dasar, $kelas_id, $kelas_unit) {
+    $q = $query_dasar;
+    if ($kelas_id && $kelas_unit === $tab) {
+        $q['kelas'] = $kelas_id;
+    }
+    $q['unit'] = $tab;
+    return site_url('presensi/rekap') . '?' . http_build_query($q);
+};
+$unit_label = array('mts' => 'MTs', 'madin' => 'Madin', 'tpq' => 'TPQ');
+?>
 <div class="content-wrapper">
     <section class="content-header">
         <div class="container-fluid">
@@ -7,10 +20,10 @@
                 </div>
                 <div class="col-sm-5 text-right">
                     <?php if ($kelas_id && !empty($rekap)): ?>
-                        <a href="<?= site_url('presensi/export_rekap?' . http_build_query(array('kelas' => $kelas_id, 'bulan' => $bulan, 'tahun' => $tahun))); ?>"
+                        <a href="<?= site_url('presensi/export_rekap?' . http_build_query(array('unit' => $unit, 'kelas' => $kelas_id, 'bulan' => $bulan, 'tahun' => $tahun))); ?>"
                            class="btn btn-success btn-sm"><i class="fas fa-file-excel"></i> Ekspor Excel</a>
                     <?php endif; ?>
-                    <a href="<?= site_url('presensi'); ?>" class="btn btn-secondary btn-sm">
+                    <a href="<?= site_url('presensi?' . http_build_query(array('unit' => $unit))); ?>" class="btn btn-secondary btn-sm">
                         <i class="fas fa-arrow-left"></i> Isi Presensi
                     </a>
                 </div>
@@ -21,9 +34,22 @@
     <section class="content">
         <div class="container-fluid">
 
+            <ul class="nav nav-tabs unit-tabs mb-3" id="presensiRekapUnitTabs" role="tablist">
+                <?php foreach (array('mts', 'madin', 'tpq') as $tab): ?>
+                    <li class="nav-item">
+                        <a class="nav-link unit-tab-<?= $tab; ?> <?= $unit === $tab ? 'active' : ''; ?>"
+                           href="<?= html_escape($tab_url($tab)); ?>" role="tab"
+                           aria-selected="<?= $unit === $tab ? 'true' : 'false'; ?>">
+                            <i class="fas <?= unit_ikon($tab); ?>"></i> <?= $unit_label[$tab]; ?>
+                        </a>
+                    </li>
+                <?php endforeach; ?>
+            </ul>
+
             <div class="card card-outline card-primary">
                 <div class="card-body">
                     <form method="get" action="<?= site_url('presensi/rekap'); ?>" class="form-row align-items-end" data-auto-filter>
+                        <input type="hidden" name="unit" value="<?= html_escape($unit); ?>">
                         <div class="form-group col-6 col-md-3">
                             <label>Kelas</label>
                             <select name="kelas" class="form-control" required>
@@ -94,7 +120,7 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-                                        <a href="<?= site_url('presensi/detail/' . (int) $r->id_siswa . '?' . http_build_query(array('bulan' => $bulan, 'tahun' => $tahun, 'kelas' => $kelas_id))); ?>"
+                                        <a href="<?= site_url('presensi/detail/' . (int) $r->id_siswa . '?' . http_build_query(array('unit' => $unit, 'bulan' => $bulan, 'tahun' => $tahun, 'kelas' => $kelas_id))); ?>"
                                            class="btn btn-info btn-xs"><i class="fas fa-list"></i> Detail</a>
                                     </td>
                                 </tr>
