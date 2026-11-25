@@ -22,7 +22,7 @@ if (!function_exists('skema_tambahan_pastikan')) {
         $selesai = true;
 
         $tabel = array(
-            'master_unit', 'master_siswa_unit',
+            'master_unit', 'master_siswa_unit', 'master_jilid',
             'cbt_pembayaran_spp', 'cbt_setting_spp', 'cbt_jenis_tagihan', 'cbt_tagihan',
             'cbt_keringanan', 'cbt_password_diganti', 'cbt_presensi_sesi', 'cbt_presensi', 'cbt_setting_poin',
             'cbt_rekening', 'cbt_bacaan'
@@ -63,6 +63,15 @@ if (!function_exists('skema_tambahan_pastikan')) {
                 PRIMARY KEY (id),
                 UNIQUE KEY uk_siswa_unit_tp (siswa_id, unit_id, id_tp),
                 KEY idx_unit (unit_id)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
+
+            "CREATE TABLE IF NOT EXISTS master_jilid (
+                id       INT UNSIGNED NOT NULL AUTO_INCREMENT,
+                kode     VARCHAR(50)  NOT NULL,
+                nama     VARCHAR(100) NOT NULL,
+                urutan   INT          NOT NULL DEFAULT 0,
+                PRIMARY KEY (id),
+                UNIQUE KEY uk_jilid_kode (kode)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4",
 
             "CREATE TABLE IF NOT EXISTS cbt_pembayaran_spp (
@@ -250,6 +259,11 @@ if (!function_exists('skema_tambahan_pastikan')) {
         // Unit yayasan: id 1 dipakai sebagai nilai default (MTs).
         $db->query("INSERT IGNORE INTO master_unit (id_unit, kode, nama, aktif) VALUES
                     (1, 'mts', 'MTs', 1), (2, 'madin', 'Madin', 1), (3, 'tpq', 'TPQ', 1)");
+
+        // Nama tampilan jilid TPQ. Bisa diubah/ditambah dari modal di halaman Siswa.
+        $db->query("INSERT IGNORE INTO master_jilid (kode, nama, urutan) VALUES
+                    ('1', 'Jilid 1', 1), ('2', 'Jilid 2', 2), ('3', 'Jilid 3', 3),
+                    ('4', 'Jilid 4', 4), ('5', 'Jilid 5', 5), ('6', 'Jilid 6', 6)");
 
         // Tagihan lama dibuat sebelum jenisnya diberi unit, sehingga unit_id-nya
         // masih 0 dan tidak muncul saat daftar tagihan difilter per unit.

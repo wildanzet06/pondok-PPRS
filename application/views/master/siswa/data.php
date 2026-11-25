@@ -50,7 +50,8 @@
                         Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
                         Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
                         tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa
-                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid.
+                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid. Di tab TPQ, tombol
+                        <b>Atur Nama Jilid</b> mengubah labelnya dan filter <b>Jilid</b> menampilkan satu kelompok saja.
                     </div>
                     <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
@@ -100,7 +101,7 @@
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-12 mb-2 d-flex flex-row justify-content-between">
+                            <div class="col-12 mb-2 d-flex flex-wrap align-items-center justify-content-between">
                                 <!--
                                 <button id="hapusterpilih" onclick="bulk_delete()" type="button" class="btn btn-danger" data-toggle="tooltip" title="Hapus Terpilh" disabled="disabled">
                                     <i class="far fa-trash-alt"></i>
@@ -124,6 +125,16 @@
                                         <option value="3">Pindah</option>
                                         <option value="4">Keluar</option>
                                     </select>
+                                </div>
+                                <div class="d-flex flex-row align-items-center d-none" id="baris-jilid">
+                                    <span>Jilid </span>
+                                    <select id="jilid-filter" class="ml-2 form-control form-control-sm">
+                                        <option value="">Semua Jilid</option>
+                                    </select>
+                                    <button type="button" id="atur-jilid"
+                                            class="btn btn-sm btn-outline-primary ml-2">
+                                        <i class="fas fa-tag mr-1"></i>Atur Nama Jilid
+                                    </button>
                                 </div>
                             </div>
                             <div class="col-12 mb-3">
@@ -364,6 +375,62 @@
 </div>
 <?= form_close() ?>
 
+<div class="modal fade" id="jilidModal" tabindex="-1" role="dialog" aria-labelledby="jilidModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jilidModalLabel">Atur Nama Jilid TPQ</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-light border small mb-3">
+                    <b>Kode</b> adalah nilai yang tersimpan di data siswa (misal <code>1</code>,
+                    <code>Juz Amma</code>). <b>Nama tampil</b> dipakai di header pengelompok dan filter.
+                </div>
+                <table class="table table-sm table-bordered mb-3" id="tabel-jilid">
+                    <thead class="thead-light">
+                    <tr>
+                        <th style="width:35%">Kode</th>
+                        <th>Nama tampil</th>
+                        <th style="width:100px">Urutan</th>
+                        <th style="width:55px"></th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div class="form-row align-items-end">
+                    <div class="form-group col-md-4 mb-2">
+                        <label>Kode baru</label>
+                        <input id="jilid-kode-baru" class="form-control form-control-sm" placeholder="Misal: juz_amma">
+                    </div>
+                    <div class="form-group col-md-5 mb-2">
+                        <label>Nama tampil</label>
+                        <input id="jilid-nama-baru" class="form-control form-control-sm" placeholder="Misal: Juz Amma">
+                    </div>
+                    <div class="form-group col-md-1 mb-2">
+                        <label>Urutan</label>
+                        <input id="jilid-urutan-baru" type="number" class="form-control form-control-sm" value="99">
+                    </div>
+                    <div class="form-group col-md-2 mb-2">
+                        <button type="button" id="jilid-tambah" class="btn btn-sm btn-secondary btn-block">
+                            <i class="fas fa-plus mr-1"></i>Tambah
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Batal</button>
+                <button type="button" id="jilid-simpan" class="btn btn-primary">
+                    <i class="fas fa-save mr-1"></i>Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?= form_open('', array('id' => 'pager')); ?>
 <input type="hidden" id="pager-page" name="page" value="1">
 <input type="hidden" id="pager-limit" name="limit" value="10">
@@ -377,6 +444,9 @@
     let $pagination, defaultOpts, query, actionBulk;
     let searchTimer = null;
     let siswaXhr = null;
+    let jilidAktif = '';
+    let jilidDaftar = [];
+    let jilidDihapus = [];
     const idUnitTpq = <?= (int) unit_id_tpq() ?>;
 
     function sinkronJilidSiswa() {
@@ -399,10 +469,88 @@
             if (unitAktif !== 'mts' && $('#users-filter').val() === '5') {
                 $('#users-filter').val('1');
             }
+            $('#baris-jilid').toggleClass('d-none', unitAktif !== 'tpq');
+            if (unitAktif === 'tpq') {
+                muatJilid(jilidAktif);
+            }
             renderHeader();
             currentPage = 1;
             loadSiswa();
         });
+
+        $('#jilid-filter').on('change', function () {
+            jilidAktif = $(this).val();
+            currentPage = 1;
+            loadSiswa();
+        });
+
+        $('#atur-jilid').on('click', function () {
+            jilidDihapus = [];
+            muatJilid().done(function () {
+                $('#jilidModal').modal('show');
+            });
+        });
+
+        $('#jilid-tambah').on('click', function () {
+            var kode = $.trim($('#jilid-kode-baru').val());
+            var nama = $.trim($('#jilid-nama-baru').val());
+            var urutan = parseInt($('#jilid-urutan-baru').val(), 10);
+            if (kode === '' || nama === '') {
+                swal.fire({title: 'Error', text: 'Kode dan nama tampil wajib diisi.', icon: 'error'});
+                return;
+            }
+            var ada = false;
+            $.each(jilidDaftar, function (_, item) {
+                if (item.kode.toLowerCase() === kode.toLowerCase()) ada = true;
+            });
+            if (ada) {
+                swal.fire({title: 'Error', text: 'Kode itu sudah ada.', icon: 'error'});
+                return;
+            }
+            jilidDaftar.push({kode: kode, nama: nama, urutan: isNaN(urutan) ? 99 : urutan});
+            urutkanJilid();
+            renderTabelJilid();
+            $('#jilid-kode-baru, #jilid-nama-baru').val('');
+        });
+
+        $('#tabel-jilid').on('click', '.hapus-jilid', function () {
+            var kode = $(this).closest('tr').data('kode');
+            jilidDaftar = jilidDaftar.filter(function (item) { return item.kode !== kode; });
+            if (jilidDihapus.indexOf(kode) === -1) jilidDihapus.push(kode);
+            renderTabelJilid();
+        });
+
+        $('#jilid-simpan').on('click', function () {
+            var items = [];
+            $('#tabel-jilid tbody tr').each(function () {
+                var baris = $(this);
+                var kode = $.trim(baris.find('.jilid-kode').val());
+                var nama = $.trim(baris.find('.jilid-nama').val());
+                var urutan = parseInt(baris.find('.jilid-urutan').val(), 10);
+                if (kode !== '' && nama !== '') {
+                    items.push({kode: kode, nama: nama, urutan: isNaN(urutan) ? 0 : urutan});
+                }
+            });
+            var tombol = $(this).prop('disabled', true);
+            $.post(base_url + 'datasiswa/jilid_simpan', {
+                items: JSON.stringify(items),
+                hapus: JSON.stringify(jilidDihapus)
+            }).done(function (res) {
+                tombol.prop('disabled', false);
+                if (!res.status) {
+                    swal.fire({title: 'Gagal', text: res.text || 'Gagal menyimpan.', icon: 'error'});
+                    return;
+                }
+                $('#jilidModal').modal('hide');
+                muatJilid(jilidAktif);
+                loadSiswa();
+                swal.fire({title: 'Tersimpan', text: res.text, icon: 'success', timer: 1500, showConfirmButton: false});
+            }).fail(function () {
+                tombol.prop('disabled', false);
+                swal.fire({title: 'ERROR', text: 'Gagal menyimpan nama jilid.', icon: 'error'});
+            });
+        });
+
         $pagination = $('#pagination');
         defaultOpts = {
             visiblePages: 5,
@@ -609,6 +757,53 @@
         return $('<div>').text(v == null ? '' : v).html();
     }
 
+    function escAttr(v) {
+        return esc(v).replace(/"/g, '&quot;');
+    }
+
+    function urutkanJilid() {
+        jilidDaftar.sort(function (a, b) {
+            var ua = parseInt(a.urutan, 10) || 0;
+            var ub = parseInt(b.urutan, 10) || 0;
+            if (ua !== ub) return ua - ub;
+            return String(a.kode).localeCompare(String(b.kode), undefined, {numeric: true});
+        });
+    }
+
+    function renderTabelJilid() {
+        var html = '';
+        $.each(jilidDaftar, function (_, item) {
+            html += '<tr data-kode="' + escAttr(item.kode) + '">' +
+                '<td><input class="form-control form-control-sm jilid-kode" value="' + escAttr(item.kode) + '"></td>' +
+                '<td><input class="form-control form-control-sm jilid-nama" value="' + escAttr(item.nama) + '"></td>' +
+                '<td><input type="number" class="form-control form-control-sm jilid-urutan" value="' +
+                (parseInt(item.urutan, 10) || 0) + '"></td>' +
+                '<td class="text-center"><button type="button" class="btn btn-xs btn-danger hapus-jilid" ' +
+                'title="Hapus nama jilid"><i class="fas fa-times"></i></button></td>' +
+                '</tr>';
+        });
+        if (html === '') {
+            html = '<tr><td colspan="4" class="text-center text-muted">Belum ada jilid.</td></tr>';
+        }
+        $('#tabel-jilid tbody').html(html);
+    }
+
+    function muatJilid(pilih) {
+        return $.getJSON(base_url + 'datasiswa/jilid_data').done(function (res) {
+            jilidDaftar = res.daftar || [];
+            urutkanJilid();
+            var saat = (pilih !== undefined && pilih !== null) ? pilih : ($('#jilid-filter').val() || '');
+            var html = '<option value="">Semua Jilid</option>' +
+                '<option value="__tanpa">Tanpa Jilid</option>';
+            $.each(jilidDaftar, function (_, item) {
+                html += '<option value="' + escAttr(item.kode) + '">' + esc(item.nama) + '</option>';
+            });
+            $('#jilid-filter').html(html).val(saat);
+            if ($('#jilid-filter').val() === null) $('#jilid-filter').val('');
+            renderTabelJilid();
+        });
+    }
+
     function renderHeader() {
         var head = '<tr>' +
             '<th height="50" class="align-middle text-center p-0"><input class="select_all" type="checkbox"></th>' +
@@ -634,7 +829,10 @@
         $('#search-loading').removeClass('d-none');
         var cari = query != null ? '&search=' + encodeURIComponent(query) : '';
         var filter = '&filter=' + $('#users-filter').val();
-        var dataPost = $('#pager').serialize() + cari + filter + '&unit=' + encodeURIComponent(unitAktif);
+        var paramJilid = unitAktif === 'tpq'
+            ? '&jilid=' + encodeURIComponent(jilidAktif || '') : '';
+        var dataPost = $('#pager').serialize() + cari + filter
+            + '&unit=' + encodeURIComponent(unitAktif) + paramJilid;
         console.log('post', dataPost);
         if (siswaXhr) {
             siswaXhr.abort();
@@ -726,9 +924,15 @@
                     var kunci = kunciJilid(siswa);
                     if (kunci !== jilidSebelumnya) {
                         jilidSebelumnya = kunci;
-                        var labelJilid = kunci === '__tanpa'
-                            ? 'Tanpa Jilid'
-                            : 'Jilid ' + esc(kunci);
+                        var namaJilid = siswa.jilid_nama || '';
+                        var labelJilid;
+                        if (kunci === '__tanpa') {
+                            labelJilid = 'Tanpa Jilid';
+                        } else if (namaJilid === '' || namaJilid === kunci) {
+                            labelJilid = /^\d+$/.test(kunci) ? 'Jilid ' + kunci : esc(kunci);
+                        } else {
+                            labelJilid = esc(namaJilid);
+                        }
                         html += '<tr class="jilid-group"><td colspan="' + colspanPenuh + '">' +
                             '<i class="fas fa-layer-group mr-1"></i>' + labelJilid +
                             '<span class="badge badge-light ml-2">' +

@@ -248,6 +248,104 @@ if (!function_exists('unit_siswa_jilid')) {
     }
 }
 
+if (!function_exists('jilid_daftar')) {
+    /**
+     * Nama jilid TPQ yang dikenal: dari master_jilid plus kode yang sedang
+     * dipakai siswa (meski belum diberi nama). Diurutkan numerik dulu.
+     */
+    function jilid_daftar()
+    {
+        $CI =& get_instance();
+        $daftar = array();
+
+        if ($CI->db->table_exists('master_jilid')) {
+            $rows = $CI->db->select('kode, nama, urutan')
+                ->order_by('urutan', 'ASC')->order_by('nama', 'ASC')
+                ->get('master_jilid')->result_array();
+            foreach ($rows as $r) {
+                $kode = trim((string) $r['kode']);
+                if ($kode === '') {
+                    continue;
+                }
+                $daftar[$kode] = array(
+                    'kode'   => $kode,
+                    'nama'   => (string) $r['nama'],
+                    'urutan' => (int) $r['urutan']
+                );
+            }
+        }
+
+        if ($CI->db->table_exists('master_siswa_unit')
+            && $CI->db->field_exists('jilid', 'master_siswa_unit')) {
+            $id_tpq = unit_id_tpq();
+            $rows = $CI->db->distinct()->select('jilid')
+                ->where('unit_id', $id_tpq)->where('status', 1)
+                ->where('jilid IS NOT NULL', null, false)
+                ->where("jilid <> ''", null, false)
+                ->get('master_siswa_unit')->result_array();
+            foreach ($rows as $r) {
+                $kode = trim((string) $r['jilid']);
+                if ($kode !== '' && !isset($daftar[$kode])) {
+                    $daftar[$kode] = array(
+                        'kode'   => $kode,
+                        'nama'   => $kode,
+                        'urutan' => 900
+                    );
+                }
+            }
+        }
+
+        $hasil = array_values($daftar);
+        usort($hasil, function ($a, $b) {
+            if ((int) $a['urutan'] !== (int) $b['urutan']) {
+                return (int) $a['urutan'] < (int) $b['urutan'] ? -1 : 1;
+            }
+            return strnatcasecmp($a['kode'], $b['kode']);
+        });
+        foreach ($hasil as &$item) {
+            if ((int) $item['urutan'] === 0) {
+                $item['urutan'] = 0;
+            }
+        }
+        unset($item);
+        return $hasil;
+    }
+}
+
+if (!function_exists('jilid_nama')) {
+    /** Nama tampilan sebuah kode jilid; kode itu sendiri bila belum diberi nama. */
+    function jilid_nama($kode)
+    {
+        $kode = trim((string) $kode);
+        if ($kode === '') {
+            return '';
+        }
+        static $peta = null;
+        if ($peta === null) {
+            $peta = array();
+            foreach (jilid_daftar() as $item) {
+                $peta[$item['kode']] = $item['nama'];
+            }
+        }
+        return isset($peta[$kode]) ? $peta[$kode] : $kode;
+    }
+}
+
+if (!function_exists('jilid_sql_urutan')) {
+    /** Ekspresi ORDER BY: angka numerik dulu, lalu urutan nama khusus. */
+    function jilid_sql_urutan($kolom = 'jilid')
+    {
+        $CI =& get_instance();
+        $kolom = '`' . str_replace('`', '', (string) $kolom) . '`';
+        $awal = "CASE WHEN $kolom REGEXP '^[0-9]+$' THEN CAST($kolom AS UNSIGNED) ELSE ";
+        if ($CI->db->table_exists('master_jilid')) {
+            return $awal
+                . "1000 + COALESCE((SELECT mj.urutan FROM master_jilid mj WHERE mj.kode = $kolom LIMIT 1), 999) END";
+        }
+        return $awal . '999 END';
+    }
+}
+
 if (!function_exists('unit_siswa_simpan')) {
     /**
      * Tulis ulang keanggotaan unit sebuah siswa secara idempoten.
@@ -371,11 +469,23 @@ if (!function_exists('unit_siswa_naik_jilid')) {
             return false;
         }
         $sekarang = unit_siswa_jilid($id_siswa);
-        $angka = 0;
-        if (preg_match('/(\d+)/', $sekarang, $m)) {
-            $angka = (int) $m[1];
+
+        // Ikuti urutan nama jilid yang sudah diatur (1..6, Juz Amma, dll.).
+        $baru = false;
+        $daftar = function_exists('jilid_daftar') ? jilid_daftar() : array();
+        foreach ($daftar as $i => $item) {
+            if ($item['kode'] === $sekarang && isset($daftar[$i + 1])) {
+                $baru = $daftar[$i + 1]['kode'];
+                break;
+            }
         }
-        $baru = (string) ($angka + 1);
+        if ($baru === false) {
+            $angka = 0;
+            if (preg_match('/(\d+)/', $sekarang, $m)) {
+                $angka = (int) $m[1];
+            }
+            $baru = (string) ($angka + 1);
+        }
         $id_tpq = unit_id_tpq();
 
         $CI->db->where('siswa_id', $id_siswa)

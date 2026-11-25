@@ -25,6 +25,10 @@ public function list()
     if (!in_array($unit, array('mts', 'madin', 'tpq'), true)) {
         $unit = 'mts';
     }
+    $jilid = (string) $this->input->post('jilid', true);
+    if ($jilid === '__semua') {
+        $jilid = '';
+    }
 
     $tp = $this->dashboard->getTahunActive();
     $smt = $this->dashboard->getSemesterActive();
@@ -35,6 +39,9 @@ public function list()
 
     $status = in_array($filter, array('3', '4'), true) ? (int) $filter : 1;
     $ada_jilid = $this->db->field_exists('jilid', 'master_siswa_unit');
+    $jilid_sql = '(SELECT su2.jilid FROM master_siswa_unit su2 '
+        . 'WHERE su2.siswa_id = a.id_siswa AND su2.unit_id = ' . $id_tpq
+        . ' AND su2.status = 1 LIMIT 1)';
 
     $select = 'a.id_siswa, a.foto, a.nama, a.nis, a.nisn, a.jenis_kelamin, '
         . 'd.id_kelas, f.nama_kelas, '
@@ -42,15 +49,13 @@ public function list()
         . '(SELECT GROUP_CONCAT(su.unit_id ORDER BY su.unit_id) FROM master_siswa_unit su '
         . 'WHERE su.siswa_id = a.id_siswa AND su.status = 1) AS unit_ids';
     if ($ada_jilid) {
-        $select .= ', (SELECT su2.jilid FROM master_siswa_unit su2 '
-            . 'WHERE su2.siswa_id = a.id_siswa AND su2.unit_id = ' . $id_tpq
-            . ' AND su2.status = 1 LIMIT 1) AS jilid';
+        $select .= ', ' . $jilid_sql . ' AS jilid';
     } else {
         $select .= ', NULL AS jilid';
     }
 
     $bangun = function ($hitung) use (
-        $tp, $smt, $status, $filter, $unit, $search,
+        $tp, $smt, $status, $filter, $unit, $search, $jilid, $jilid_sql,
         $id_mts, $id_madin, $id_tpq, $ada_jilid, $select, $limit, $offset
     ) {
         if ($hitung) {
@@ -101,6 +106,16 @@ public function list()
             );
         }
 
+        // Filter jilid hanya berlaku di tab TPQ. Alias SELECT tidak bisa
+        // dipakai di WHERE, jadi subquery-nya diulang di sini.
+        if ($unit === 'tpq' && $ada_jilid && $jilid !== '') {
+            if ($jilid === '__tanpa') {
+                $this->db->where('(' . $jilid_sql . " IS NULL OR " . $jilid_sql . " = '')", null, false);
+            } else {
+                $this->db->where($jilid_sql . ' = ' . $this->db->escape($jilid), null, false);
+            }
+        }
+
         if ($search !== null && $search !== '') {
             $cari = $this->db->escape_like_str($search);
             $this->db->where(
@@ -112,10 +127,13 @@ public function list()
 
         if (!$hitung) {
             if ($unit === 'tpq' && $ada_jilid) {
-                // Urutkan numerik (1, 2, 10), bukan leksikografis (1, 10, 2),
-                // supaya baris pengelompok jilid bersebelahan.
+                // Angka diurutkan numerik (1, 2, 10); nama khusus (Juz Amma,
+                // Al Qur'an, dll.) mengikuti urutan di master_jilid.
+                $urutan = function_exists('jilid_sql_urutan')
+                    ? jilid_sql_urutan('jilid')
+                    : "CASE WHEN `jilid` REGEXP '^[0-9]+$' THEN CAST(`jilid` AS UNSIGNED) ELSE 999 END";
                 $this->db->order_by(
-                    "CAST(NULLIF(`jilid`, '') AS UNSIGNED) ASC, `jilid` ASC, `a`.`nama` ASC",
+                    $urutan . ' ASC, `jilid` ASC, `a`.`nama` ASC',
                     null,
                     false
                 );
@@ -154,6 +172,7 @@ public function list()
         $row['unit_ids'] = array_values($ids);
         $row['unit_labels'] = $label;
         $row['jilid'] = $row['jilid'] === null ? '' : (string) $row['jilid'];
+        $row['jilid_nama'] = function_exists('jilid_nama') ? jilid_nama($row['jilid']) : $row['jilid'];
     }
     unset($row);
 
@@ -165,10 +184,90 @@ public function list()
         'perpage' => $limit,
         'filter' => $filter,
         'unit' => $unit,
+        'jilid' => $jilid,
         'unit_labels' => $pilihan
     );
 
     return $this->output_json($data);
+}
+
+/**
+ * Daftar nama jilid TPQ + kode yang sedang dipakai siswa.
+ * Dipakai modal "Atur Nama Jilid" dan filter jilid di tab TPQ.
+ */
+public function jilid_data()
+{
+    $daftar = function_exists('jilid_daftar') ? jilid_daftar() : array();
+    $digunakan = array();
+
+    if ($this->db->table_exists('master_siswa_unit')
+        && $this->db->field_exists('jilid', 'master_siswa_unit')) {
+        $id_tpq = function_exists('unit_id_tpq') ? (int) unit_id_tpq() : 3;
+        $rows = $this->db->distinct()->select('jilid')
+            ->where('unit_id', $id_tpq)
+            ->where('status', 1)
+            ->where('jilid IS NOT NULL', null, false)
+            ->where("jilid <> ''", null, false)
+            ->get('master_siswa_unit')->result_array();
+        foreach ($rows as $r) {
+            $kode = trim((string) $r['jilid']);
+            if ($kode !== '') {
+                $digunakan[] = $kode;
+            }
+        }
+    }
+
+    return $this->output_json(array(
+        'status' => true,
+        'daftar' => $daftar,
+        'digunakan' => $digunakan
+    ));
+}
+
+/** Simpan/ubah nama jilid TPQ dari modal di halaman Daftar Siswa. */
+public function jilid_simpan()
+{
+    if ($this->input->server('REQUEST_METHOD') !== 'POST') {
+        show_404();
+    }
+
+    $items = json_decode((string) $this->input->post('items'), true);
+    if (!is_array($items)) {
+        return $this->output_json(array('status' => false, 'text' => 'Data jilid tidak valid.'));
+    }
+
+    $this->db->trans_start();
+    $jumlah = 0;
+    foreach ($items as $item) {
+        $kode = isset($item['kode']) ? trim((string) $item['kode']) : '';
+        $nama = isset($item['nama']) ? trim((string) $item['nama']) : '';
+        if ($kode === '' || $nama === '') {
+            continue;
+        }
+        $urutan = isset($item['urutan']) ? (int) $item['urutan'] : 0;
+        $sql = 'INSERT INTO master_jilid (kode, nama, urutan) VALUES ('
+            . $this->db->escape($kode) . ', ' . $this->db->escape($nama) . ', ' . $urutan . ')
+            ON DUPLICATE KEY UPDATE nama = VALUES(nama), urutan = VALUES(urutan)';
+        $this->db->query($sql);
+        $jumlah++;
+    }
+
+    $hapus = json_decode((string) $this->input->post('hapus'), true);
+    if (is_array($hapus)) {
+        foreach ($hapus as $kode) {
+            $kode = trim((string) $kode);
+            if ($kode !== '') {
+                $this->db->where('kode', $kode)->delete('master_jilid');
+            }
+        }
+    }
+    $this->db->trans_complete();
+
+    return $this->output_json(array(
+        'status' => $this->db->trans_status() !== false,
+        'text' => $jumlah . ' nama jilid tersimpan.',
+        'jumlah' => $jumlah
+    ));
 }
  public function add() { goto I3QZV; Em_b0: $data["\x74\160"] = $this->dashboard->getTahun(); goto K11Y1; XUVS7: $this->load->view("\137\x74\145\155\160\x6c\141\x74\145\x73\57\x64\x61\163\150\142\157\141\x72\144\x2f\x5f\x66\x6f\157\x74\x65\162"); goto eSyfc; I3QZV: $this->load->model("\104\141\x73\150\x62\x6f\x61\162\144\137\x6d\157\x64\x65\x6c", "\144\x61\163\x68\142\157\141\162\x64"); goto hH9od; sTvQu: $data["\160\x72\x6f\146\151\x6c\145"] = $this->dashboard->getProfileAdmin($user->id); goto glDL6; N2Ypr: $this->load->view("\x5f\x74\x65\x6d\160\x6c\141\x74\x65\163\x2f\x64\x61\163\150\142\x6f\141\162\x64\57\x5f\x68\x65\x61\x64\145\x72", $data); goto SBFTP; SBFTP: $this->load->view("\x6d\x61\x73\x74\145\x72\x2f\163\151\x73\x77\x61\x2f\141\x64\x64"); goto XUVS7; glDL6: $data["\x74\x69\160\145"] = "\141\x64\x64"; goto N2Ypr; hH9od: $user = $this->ion_auth->user()->row(); goto wLdd1; wLdd1: $data = ["\165\163\145\x72" => $user, "\x6a\165\144\x75\x6c" => "\x53\x69\x73\167\x61", "\x73\x75\142\152\x75\144\x75\x6c" => "\124\x61\x6d\x62\141\150\x20\x44\141\x74\x61\40\x53\x69\x73\x77\141", "\x73\145\x74\x74\x69\156\147" => $this->dashboard->getSetting()]; goto Em_b0; K11Y1: $data["\164\160\x5f\x61\143\x74\x69\166\145"] = $this->dashboard->getTahunActive(); goto VnQnn; VnQnn: $data["\x73\155\164"] = $this->dashboard->getSemester(); goto i4Zfu; i4Zfu: $data["\163\155\x74\x5f\x61\143\x74\x69\166\x65"] = $this->dashboard->getSemesterActive(); goto sTvQu; eSyfc: } public function create()
 {
