@@ -10,6 +10,14 @@
         .dataTables_filter { text-align: left !important; }
         .dataTables_length { margin-bottom: .5rem; }
     }
+    .jilid-group td {
+        background: #e9ecef;
+        color: #495057;
+        font-weight: 600;
+        padding: .4rem .75rem;
+        border-top: 1px solid #dee2e6;
+    }
+    .jilid-group:first-child td { border-top: 0; }
 </style><div class="content-wrapper bg-white pt-4">
     <section class="content-header">
         <div class="container-fluid">
@@ -41,7 +49,8 @@
                     <div class="alert alert-light border small mb-3">
                         Pilih <b>Unit Murid</b> (MTs / Madin / TPQ) langsung saat tambah atau edit siswa.
                         Murid yang juga Madin/TPQ tetap tampil di tab <b>MTs</b> dengan badge unit;
-                        tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa.
+                        tab Madin/TPQ hanya berisi murid tanpa unit MTs. Jilid TPQ diisi di form siswa
+                        dan tab TPQ otomatis dikelompokkan berdasarkan jilid.
                     </div>
                     <ul class="nav nav-tabs unit-tabs mb-3" id="siswaUnitTabs" role="tablist">
                         <li class="nav-item">
@@ -673,6 +682,20 @@
             return '<span class="badge ' + warna + ' mr-1">' + esc(label) + '</span>';
         }
 
+        // Hitungjumlah per jilid pada halaman ini untuk header pengelompok.
+        var kunciJilid = function (siswa) {
+            return (siswa.jilid === '' || siswa.jilid == null) ? '__tanpa' : String(siswa.jilid);
+        };
+        var hitungJilid = {};
+        var jilidSebelumnya = null;
+        var colspanPenuh = unitAktif === 'madin' ? 5 : 6;
+        if (unitAktif === 'tpq') {
+            $.each(data.lists, function (_, siswa) {
+                var kunci = kunciJilid(siswa);
+                hitungJilid[kunci] = (hitungJilid[kunci] || 0) + 1;
+            });
+        }
+
         if (data.lists.length > 0) {
             $.each(data.lists, function (idx, siswa) {
                 var labels = (siswa.unit_labels && siswa.unit_labels.length)
@@ -695,8 +718,23 @@
                 } else if (unitAktif === 'tpq') {
                     kolomTambahan = '<td class="align-middle text-center">' +
                         (siswa.jilid !== '' && siswa.jilid != null
-                            ? 'Jilid ' + esc(siswa.jilid)
+                            ? esc(siswa.jilid)
                             : '<span class="text-muted">-</span>') + '</td>';
+                }
+
+                if (unitAktif === 'tpq') {
+                    var kunci = kunciJilid(siswa);
+                    if (kunci !== jilidSebelumnya) {
+                        jilidSebelumnya = kunci;
+                        var labelJilid = kunci === '__tanpa'
+                            ? 'Tanpa Jilid'
+                            : 'Jilid ' + esc(kunci);
+                        html += '<tr class="jilid-group"><td colspan="' + colspanPenuh + '">' +
+                            '<i class="fas fa-layer-group mr-1"></i>' + labelJilid +
+                            '<span class="badge badge-light ml-2">' +
+                            hitungJilid[kunci] + ' siswa</span>' +
+                            '</td></tr>';
+                    }
                 }
 
                 html += '<tr>' +

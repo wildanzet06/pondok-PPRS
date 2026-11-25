@@ -111,8 +111,18 @@ public function list()
         }
 
         if (!$hitung) {
-            $this->db->order_by('f.nama_kelas', 'ASC');
-            $this->db->order_by('a.nama', 'ASC');
+            if ($unit === 'tpq' && $ada_jilid) {
+                // Urutkan numerik (1, 2, 10), bukan leksikografis (1, 10, 2),
+                // supaya baris pengelompok jilid bersebelahan.
+                $this->db->order_by(
+                    "CAST(NULLIF(`jilid`, '') AS UNSIGNED) ASC, `jilid` ASC, `a`.`nama` ASC",
+                    null,
+                    false
+                );
+            } else {
+                $this->db->order_by('f.nama_kelas', 'ASC');
+                $this->db->order_by('a.nama', 'ASC');
+            }
             $this->db->limit($limit, $offset);
         }
     };
