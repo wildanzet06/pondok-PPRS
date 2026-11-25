@@ -406,4 +406,4 @@
     localStorage.setItem('ada_jadwal_ujian', adaJadwalUjian);
 </script>
 <script src="<?= base_url() ?>/assets/app/js/jquery.rowspanizer.js"></script>
-<script src="<?= base_url() ?>/assets/app/js/dashboard.js"></script>
+<script src="<?= base_url() ?>assets/app/js/dashboard.js?v=<?= filemtime(FCPATH . 'assets/app/js/dashboard.js') ?>"></script>

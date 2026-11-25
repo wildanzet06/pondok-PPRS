@@ -777,6 +777,16 @@
             'primary', "warning", "primary", "success", "primary", "success", "warning"
         ];
 
+        function escLog(s) {
+            if (s === null || s === undefined) return '';
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function load_log() {
             $.ajax({
                 url: base_url + "dashboard/getlogsiswa/10",
@@ -785,19 +795,24 @@
                     //console.log(data);
                     var ul = '<ul class="products-list product-list-in-card pl-2 pr-2">';
                     $.each(data, function (key, value) {
-                        var nama = value.id_group === '1' ? value.first_name : value.first_name + ' ' + value.last_name; //value.id_group === '1' ? value.name : (value.id_group === '2' ? value.nama_guru : value.nama);
-                        var clr = colorBg[value.log_type];
-                        var tgl = formatTanggal(value.log_time);//new Date('02/12/2018');
+                        var depan = value.first_name == null ? '' : String(value.first_name);
+                        var belakang = value.last_name == null ? '' : String(value.last_name);
+                        var nama = (depan + ' ' + belakang).trim();
+                        if (!nama) nama = value.name_group || ('Pengguna #' + value.id_user);
+                        nama = String(nama).trim();
+                        var inisial = nama.charAt(0).toUpperCase() || '?';
+                        var clr = colorBg[value.log_type] || 'secondary';
+                        var tgl = value.log_time ? formatTanggal(value.log_time) : '';
                         ul += '  <li class="item">' +
                             '    <div class="media" style="line-height: 1">' +
                             '      <button class="btn btn-circle-sm btn-' + clr + ' media-left">' +
-                            nama.charAt(0).toUpperCase() +
+                            escLog(inisial) +
                             '      </button>' +
                             '      <div class="media-body ml-2">' +
                             '        <span class="float-right text-xs text-muted">' + tgl + '</span>' +
-                            '        <span>' + nama + '</span>' +
+                            '        <span>' + escLog(nama) + '</span>' +
                             '        <br />' +
-                            '        <span class="text-' + clr + ' text-sm">' + value.log_desc + '</span class="product-description">' +
+                            '        <span class="text-' + clr + ' text-sm">' + escLog(value.log_desc) + '</span class="product-description">' +
                             '      </div>' +
                             '    </div>' +
                             '  </li>';
