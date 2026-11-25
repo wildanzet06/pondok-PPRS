@@ -256,8 +256,9 @@ $qs_filter = http_build_query(array_filter($filter));
                                     <td class="text-nowrap">
                                         <?php if ($t->status != 'lunas' && !$t->gratis): ?>
                                             <a href="<?= site_url('pembayaran/tunai?tagihan=' . (int) $t->id); ?>"
-                                               class="btn btn-success btn-xs" title="Catat pembayaran tunai">
-                                                <i class="fas fa-money-bill-wave"></i> Tunai
+                                               class="btn btn-success btn-xs"
+                                               title="Catat pembayaran tunai" aria-label="Catat pembayaran tunai">
+                                                <i class="fas fa-money-bill-wave"></i>
                                             </a>
                                         <?php endif; ?>
                                             <?php
@@ -288,8 +289,9 @@ $qs_filter = http_build_query(array_filter($filter));
                                             <?php endif; ?>
                                         <?php if (($t->status != 'lunas' || $t->gratis) && empty($t->seikhlasnya)): ?>
                                             <button type="button" class="btn btn-warning btn-xs"
-                                                    onclick="ubahDiskon(<?= (int) $t->id; ?>, <?= (int) $t->nominal; ?>, <?= (int) $t->diskon; ?>, '<?= html_escape(addslashes($t->nama)); ?>')">
-                                                <i class="fas fa-percent"></i> Diskon
+                                                    onclick="ubahDiskon(<?= (int) $t->id; ?>, <?= (int) $t->nominal; ?>, <?= (int) $t->diskon; ?>, '<?= html_escape(addslashes($t->nama)); ?>')"
+                                                    title="Atur diskon tagihan" aria-label="Atur diskon tagihan">
+                                                <i class="fas fa-percent"></i>
                                             </button>
                                         <?php endif; ?>
                                         <?php if ((int) $t->jml_pembayaran === 0): ?>

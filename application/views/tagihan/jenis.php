@@ -237,19 +237,22 @@ $rp = function ($n) { return 'Rp ' . number_format((float) $n, 0, ',', '.'); };
                                             </td>
                                             <td><?= (int) $j->jml_tagihan; ?> tagihan</td>
                                             <td class="text-nowrap">
-                                                <a href="<?= site_url('tagihan/jenis?edit=' . (int) $j->id); ?>" class="btn btn-warning btn-xs">
-                                                    <i class="fas fa-edit"></i> Edit
+                                                <a href="<?= site_url('tagihan/jenis?edit=' . (int) $j->id); ?>"
+                                                   class="btn btn-warning btn-xs"
+                                                   title="Edit jenis tagihan" aria-label="Edit jenis tagihan">
+                                                    <i class="fas fa-edit"></i>
                                                 </a>
                                                 <?php
                                                 $dipakai = (int) $j->jml_tagihan > 0;
                                                 $pesan = $dipakai
                                                     ? 'Jenis ini sudah dipakai ' . (int) $j->jml_tagihan . ' tagihan. Klik OK untuk menonaktifkannya (data lama tetap tersimpan).'
                                                     : 'Hapus jenis tagihan ini?';
+                                                $judul_aksi = $dipakai ? 'Nonaktifkan jenis tagihan' : 'Hapus jenis tagihan';
                                                 ?>
                                                 <?= form_open('tagihan/jenis_hapus/' . (int) $j->id, array('class' => 'd-inline', 'onsubmit' => "return confirm(" . json_encode($pesan) . ")")); ?>
-                                                    <button type="submit" class="btn btn-<?= $dipakai ? 'warning' : 'danger'; ?> btn-xs">
+                                                    <button type="submit" class="btn btn-<?= $dipakai ? 'warning' : 'danger'; ?> btn-xs"
+                                                            title="<?= $judul_aksi; ?>" aria-label="<?= $judul_aksi; ?>">
                                                         <i class="fas fa-<?= $dipakai ? 'ban' : 'trash'; ?>"></i>
-                                                        <?= $dipakai ? 'Nonaktifkan' : 'Hapus'; ?>
                                                     </button>
                                                 <?= form_close(); ?>
                                             </td>
