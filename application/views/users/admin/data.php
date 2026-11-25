@@ -117,4 +117,4 @@
     var user_id = '<?=$user->id?>';
 </script>
 
-<script src="<?= base_url() ?>/assets/app/js/users/admin/data.js"></script>
+<script src="<?= base_url() ?>assets/app/js/users/admin/data.js?v=<?= filemtime(FCPATH . 'assets/app/js/users/admin/data.js') ?>"></script>
